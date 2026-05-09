@@ -37,9 +37,6 @@ def get_storage_client():
     return storage.Client(project=PROJECT_ID)
 
 def get_genai_client():
-    """Initializes and returns the Google GenAI client (requires GEMINI_API_KEY)."""
-    if "GEMINI_API_KEY" not in os.environ:
-        raise EnvironmentError("GEMINI_API_KEY environment variable is missing.")
     return genai.Client()
 
 # ----------------------------------------------------------------------------

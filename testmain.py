@@ -2,8 +2,6 @@
 test_managefilesearchstore.py
 
 Test script to validate the Gemini File Search Store creation and update logic.
-Ensure you have set the GEMINI_API_KEY environment variable and authenticated
-with Google Cloud (e.g., `gcloud auth application-default login`) before running.
 
 Usage:
     python test_managefilesearchstore.py
@@ -22,12 +20,6 @@ except ImportError:
 
 def run_tests():
     agent_name = "FARAH"
-    
-    # Pre-flight check for Gemini API Key
-    if "GEMINI_API_KEY" not in os.environ:
-        print("⚠️  WARNING: GEMINI_API_KEY environment variable is not set.")
-        print("Please set it using: export GEMINI_API_KEY='your_key_here'")
-        sys.exit(1)
 
     print("="*60)
     print(f"🧪 Starting Tests for Agent: {agent_name}")
