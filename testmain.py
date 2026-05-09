@@ -2,7 +2,6 @@
 test_managefilesearchstore.py
 
 Test script to validate the Gemini File Search Store creation and update logic.
-
 Usage:
     python test_managefilesearchstore.py
 """
@@ -22,7 +21,7 @@ def run_tests():
     agent_name = "FARAH"
 
     print("="*60)
-    print(f"🧪 Starting Tests for Agent: {agent_name}")
+    print(f"🧪 Starting Tests for Agent: {agent_name} using VM Service Account")
     print("="*60)
 
     # ---------------------------------------------------------

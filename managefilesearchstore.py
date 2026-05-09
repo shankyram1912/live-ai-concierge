@@ -37,14 +37,16 @@ def get_storage_client():
     return storage.Client(project=PROJECT_ID)
 
 def get_genai_client():
+    """Initializes and returns the Google GenAI client using VM Service Account credentials."""
+    # Relies entirely on the VM's Application Default Credentials (ADC)
     return genai.Client()
 
 # ----------------------------------------------------------------------------
 # Helpers
 # ----------------------------------------------------------------------------
 
-def _get_mime_type(file_path: str) -> str:
-    """Validates the file extension and returns the appropriate MIME type."""
+def _validate_file_type(file_path: str) -> str:
+    """Validates the file extension against supported MIME types."""
     ext = os.path.splitext(file_path)[1].lower()
     if ext not in MIME_TYPE_MAPPING:
         raise ValueError(
@@ -87,7 +89,6 @@ def delete_agent_file_search_store(agent_name: str):
     print(f"[{agent_name}] Checking for existing File Search Stores...")
     
     for store in client.file_search_stores.list():
-        # Match via display_name since we set it to agent_name upon creation
         if store.display_name == agent_name:
             print(f"[{agent_name}] Found existing store '{store.name}'. Deleting...")
             # force=True also deletes all contained imported documents within the store
@@ -97,44 +98,41 @@ def delete_agent_file_search_store(agent_name: str):
 def build_agent_file_search_store(agent_name: str, local_file_path: str):
     """Creates the Multimodal File Search Store and imports the agent's file."""
     client = get_genai_client()
-    mime_type = _get_mime_type(local_file_path)
+    _validate_file_type(local_file_path)  # Early validation before hitting API
     
-    # 1. Create the Multimodal File Search Store
-    print(f"[{agent_name}] Creating File Search Store...")
-    store = client.file_search_stores.create(
-        config={
-            "display_name": agent_name,
-            "embedding_model": "models/gemini-embedding-2",
-        }
-    )
-    print(f"[{agent_name}] Store created successfully: {store.name}")
-    
-    # 2. Upload the raw file into Gemini Space
+    # 1. Upload file (File name will be visible in citations)
     print(f"[{agent_name}] Uploading file to Gemini...")
-    gemini_file = client.files.upload(
-        file=local_file_path,
+    sample_file = client.files.upload(
+        file=local_file_path, 
+        config={'name': f"{agent_name}_KnowledgeBase"}
+    )
+    print(f"[{agent_name}] File uploaded: {sample_file.name}")
+    
+    # 2. Create the File Search Store
+    print(f"[{agent_name}] Creating File Search Store...")
+    file_search_store = client.file_search_stores.create(
         config={
-            'display_name': f"{agent_name}_KnowledgeBase",
-            'mime_type': mime_type
+            'display_name': agent_name,
+            'embedding_model': 'models/gemini-embedding-2'
         }
     )
-    print(f"[{agent_name}] File uploaded: {gemini_file.name}")
+    print(f"[{agent_name}] Store created successfully: {file_search_store.name}")
     
-    # 3. Import the uploaded file into the File Search Store
+    # 3. Import the file into the store
     print(f"[{agent_name}] Importing file into the Store for embeddings indexing...")
     operation = client.file_search_stores.import_file(
-        file_search_store_name=store.name,
-        file_name=gemini_file.name
+        file_search_store_name=file_search_store.name,
+        file_name=sample_file.name
     )
     
-    # 4. Wait for processing to complete
+    # 4. Wait for operation to complete
     while not operation.done:
         print(f"[{agent_name}] Indexing in progress... waiting 5 seconds.")
         time.sleep(5)
         operation = client.operations.get(operation)
         
     print(f"[{agent_name}] Import operation completed successfully!")
-    return store
+    return file_search_store
 
 # ----------------------------------------------------------------------------
 # Main API Methods
@@ -151,21 +149,16 @@ def create_agent_file_search(agent_name: str):
     doc_ref = db.collection('ai-agents').document(agent_name)
     doc = doc_ref.get()
     
-    # 3a. Check if the agent exists
     if not doc.exists:
         raise Exception(f"Agent '{agent_name}' not found in database.")
         
     data = doc.to_dict()
+    gs_path = data.get('knowledgeFilePath')
     
-    # Check for knowledgeFilePath (fallback to knowledgeFileUrl just in case)
-    gs_path = data.get('knowledgeFilePath') or data.get('knowledgeFileUrl')
     if not gs_path:
         raise Exception(f"Agent '{agent_name}' has no knowledge file configured in Firestore.")
         
-    # 3b. Download the file locally
     local_file_path = _download_knowledge_file(gs_path, agent_name)
-    
-    # 3c. Create the store and import
     store = build_agent_file_search_store(agent_name, local_file_path)
     
     print(f"--- Completed File Search Creation for '{agent_name}' ---")
@@ -182,24 +175,19 @@ def update_agent_file_search(agent_name: str):
     doc_ref = db.collection('ai-agents').document(agent_name)
     doc = doc_ref.get()
     
-    # 4a. Check if the agent exists
     if not doc.exists:
         raise Exception(f"Agent '{agent_name}' not found in database.")
         
     data = doc.to_dict()
+    gs_path = data.get('knowledgeFilePath')
     
-    # Fetch file path
-    gs_path = data.get('knowledgeFilePath') or data.get('knowledgeFileUrl')
     if not gs_path:
         raise Exception(f"Agent '{agent_name}' has no knowledge file configured in Firestore.")
         
-    # 4b. Download the file locally
     local_file_path = _download_knowledge_file(gs_path, agent_name)
     
-    # 4c. Delete existing store if it exists
+    # Purge existing before building new
     delete_agent_file_search_store(agent_name)
-    
-    # 4d. Rebuild the store
     store = build_agent_file_search_store(agent_name, local_file_path)
     
     print(f"--- Completed File Search Update for '{agent_name}' ---")
