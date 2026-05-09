@@ -77,10 +77,10 @@ async def add_cache_control_header(request: Request, call_next):
 # Front End Endpoints
 # ========================================
 
-# @app.get("/live-ai-concierge")
-# async def root():
-#     """Serve the index.html page."""
-#     return FileResponse(Path(__file__).parent / "static" / "index.html", headers=NO_CACHE_HEADERS)
+@app.get("/live-ai-concierge")
+async def root():
+    """Serve the index.html page."""
+    return FileResponse(Path(__file__).parent / "static" / "index.html", headers=NO_CACHE_HEADERS)
 
 @app.get("/live-ai-concierge/initialize")
 async def root():
