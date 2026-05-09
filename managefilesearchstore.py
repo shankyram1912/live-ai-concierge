@@ -100,11 +100,11 @@ def build_agent_file_search_store(agent_name: str, local_file_path: str):
     client = get_genai_client()
     _validate_file_type(local_file_path)  # Early validation before hitting API
     
-    # 1. Upload file (File name will be visible in citations)
+    # 1. Upload file (Using display_name to avoid lowercase/dash constraints)
     print(f"[{agent_name}] Uploading file to Gemini...")
     sample_file = client.files.upload(
         file=local_file_path, 
-        config={'name': f"{agent_name}_KnowledgeBase"}
+        config={'display_name': f"{agent_name}_KnowledgeBase"}
     )
     print(f"[{agent_name}] File uploaded: {sample_file.name}")
     
