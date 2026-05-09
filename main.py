@@ -43,7 +43,7 @@ app_name = config.APP_NAME
 
 app = FastAPI(title="Concierge AI Agent")
 session_service = InMemorySessionService()
-agent = aris_agent
+agent = concierge_agent
 runner = Runner(app_name=app_name, agent=agent, session_service=session_service)
 
 # CORS configuration
