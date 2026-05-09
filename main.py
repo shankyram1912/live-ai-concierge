@@ -69,9 +69,8 @@ NO_CACHE_HEADERS = {
 @app.middleware("http")
 async def add_cache_control_header(request: Request, call_next):
     response = await call_next(request)
-    if request.url.path.startswith(request.url.path.endswith(".js")):
-        for key, value in NO_CACHE_HEADERS.items():
-            response.headers[key] = value
+    if request.url.path.endswith(".js"):
+        response.headers.update(NO_CACHE_HEADERS)
     return response
 
 # ========================================
@@ -286,4 +285,4 @@ async def root():
 #         live_request_queue.close()
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8001, reload=True)
+    uvicorn.run("main:app", host="0.0.0.0", port=8003, reload=True)
