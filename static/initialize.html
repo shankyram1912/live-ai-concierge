@@ -172,7 +172,6 @@
             padding: 16px; font-size: 13px; color: var(--text-primary);
             border-bottom: 1px solid rgba(255,255,255,0.04);
             vertical-align: top; line-height: 1.5;
-            font-variant: normal !important; text-transform: none !important;
         }
         .agent-table tr:last-child td { border-bottom: none; }
         .agent-table tr:hover td { background: rgba(255,255,255,0.02); }
@@ -182,32 +181,23 @@
             overflow: hidden; text-overflow: ellipsis; max-height: 4.5em; position: relative;
         }
         .table-expand-btn {
-            background: rgba(10,132,255,0.1); border: 1px solid rgba(10,132,255,0.25); color: var(--apple-blue); cursor: pointer;
-            border-radius: 6px; padding: 5px; margin-top: 8px;
-            display: inline-flex; align-items: center; justify-content: center;
-            transition: all 0.2s;
+            background: transparent; border: none; color: var(--apple-blue); cursor: pointer;
+            padding: 4px 0 0; display: inline-flex; align-items: center; justify-content: center;
+            transition: all 0.2s; border-radius: 4px;
         }
-        .table-expand-btn:hover { background: rgba(10,132,255,0.2); border-color: rgba(10,132,255,0.4); }
-        .table-expand-btn svg { width: 14px; height: 14px; }
+        .table-expand-btn:hover { color: #fff; }
+        .table-expand-btn svg { width: 16px; height: 16px; }
 
         .table-action-btn {
             background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
             border-radius: 6px; padding: 6px; cursor: pointer; color: var(--text-secondary);
             transition: all 0.2s ease; display: flex; align-items: center; justify-content: center;
-            flex-shrink: 0;
+            flex-shrink: 0; outline: none;
         }
         .table-action-btn:hover { background: rgba(255,255,255,0.15); color: #fff; }
-        .table-action-btn.delete-row-btn:hover { background: rgba(255,69,58,0.15); color: var(--apple-red); border-color: rgba(255,69,58,0.3); }
+        .table-action-btn.view-file-btn:hover { background: rgba(191,90,242,0.15); color: var(--apple-purple); border-color: rgba(191,90,242,0.3); }
         .table-action-btn.edit-row-btn:hover { background: rgba(10,132,255,0.15); color: var(--apple-blue); border-color: rgba(10,132,255,0.3); }
-
-        .file-link {
-            display: inline-flex; align-items: center; gap: 6px;
-            background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.1);
-            padding: 6px 10px; border-radius: 8px; color: var(--text-primary);
-            text-decoration: none; font-size: 12px; font-weight: 500; transition: all 0.2s;
-        }
-        .file-link svg { width: 14px; height: 14px; color: var(--text-secondary); }
-        .file-link:hover { background: rgba(255,255,255,0.15); }
+        .table-action-btn.delete-row-btn:hover { background: rgba(255,69,58,0.15); color: var(--apple-red); border-color: rgba(255,69,58,0.3); }
 
         /* Pagination */
         .pagination-bar {
@@ -275,7 +265,7 @@
         .textarea-wrapper { position: relative; }
         .form-textarea {
             width: 100%; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 12px; padding: 12px 14px; font-size: 14px; color: #fff;
+            border-radius: 12px; padding: 12px 14px 28px; font-size: 14px; color: #fff;
             outline: none; transition: border-color 0.2s; resize: none; overflow: hidden;
             min-height: 50px; line-height: 1.5;
         }
@@ -359,15 +349,9 @@
         .focus-done-btn:hover { opacity: 0.9; }
 
         code { font-family: var(--mono); background: rgba(255,255,255,0.1); padding: 2px 4px; border-radius: 4px; font-size: 0.9em; }
-
-        /* Small Caps utility */
-        .sc { font-variant: small-caps; text-transform: lowercase; }
-
-        /* Prevent small caps inside textareas so XML formats nicely */
-        textarea { font-variant: normal !important; text-transform: none !important; }
     </style>
 </head>
-<body class="sc">
+<body>
 
     <!-- ── TEXTAREA FOCUS OVERLAY ── -->
     <div id="focus-overlay">
@@ -389,11 +373,11 @@
                 </svg>
             </div>
             <div class="modal-title">Create AI Agent</div>
-            <div class="modal-body" style="margin-bottom: 16px; font-variant: normal; text-transform: none;">Configure a new Concierge AI agent and upload its knowledge base.</div>
+            <div class="modal-body">Configure a new Concierge AI agent and upload its knowledge base.</div>
             
             <form id="create-agent-form">
                 <div class="form-group">
-                    <label class="form-label">Agent Name (No spaces, auto-uppercase)</label>
+                    <label class="form-label">Agent Name (No spaces)</label>
                     <input type="text" id="agent-name" class="form-input" placeholder="e.g. SALESBOT_V1" required>
                 </div>
                 <div class="form-group">
@@ -452,7 +436,7 @@
                 </svg>
             </div>
             <div class="modal-title">Edit AI Agent</div>
-            <div class="modal-body" style="margin-bottom: 16px; font-variant: normal; text-transform: none;">Update configuration for this Concierge AI agent.</div>
+            <div class="modal-body">Update configuration for this Concierge AI agent.</div>
             
             <form id="edit-agent-form">
                 <div class="form-group">
@@ -515,7 +499,7 @@
                 </svg>
             </div>
             <div class="modal-title">Delete Agent?</div>
-            <div class="modal-body" style="font-variant: normal; text-transform: none;">Are you sure you want to permanently delete <strong id="delete-target-name" style="color: #fff;"></strong> from Firestore?</div>
+            <div class="modal-body">Are you sure you want to permanently delete <strong id="delete-target-name" style="color: #fff;"></strong> from Firestore?</div>
             <div class="modal-actions">
                 <button class="btn-modal-cancel" id="row-delete-cancel-btn">Cancel</button>
                 <button class="btn-modal-danger" id="row-delete-confirm-btn">Delete</button>
@@ -535,7 +519,7 @@
                 </div>
                 <div>
                     <div class="header-title">Concierge AI — Admin Console</div>
-                    <div class="header-subtitle">Agent Configuration · live-concierge-ai</div>
+                    <div class="header-subtitle">Concierge Agent Configuration · live-concierge-ai</div>
                 </div>
             </div>
             <div class="engine-pill">genai-e2e-demos</div>
@@ -801,9 +785,9 @@
                     <tr>
                         <th width="15%">Company</th>
                         <th width="15%">Agent Name</th>
-                        <th width="30%">Purpose</th>
-                        <th width="30%">Instructions</th>
-                        <th width="10%" style="text-align: center;">Actions</th>
+                        <th width="28%">Purpose</th>
+                        <th width="28%">Instructions</th>
+                        <th width="14%" style="text-align: center;">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -812,10 +796,14 @@
         pageData.forEach(item => {
             const val = item.data;
             const key = item.id;
+            
+            // Support both old knowledgeFileUrl and new knowledgeFilePath during transition
+            const gsFileLink = val.knowledgeFilePath || val.knowledgeFileUrl; 
+
             html += `
                 <tr>
                     <td style="font-weight:600;">${escapeHTML(val.company || '—')}</td>
-                    <td><code style="color:var(--apple-green); font-variant: normal; text-transform: none;">${escapeHTML(val.agentName || key)}</code></td>
+                    <td><code style="color:var(--apple-green);">${escapeHTML(val.agentName || key)}</code></td>
                     <td>
                         <div class="truncate-box">${escapeHTML(val.purpose)}</div>
                         <button class="table-expand-btn view-expand-btn" data-id="${key}" data-field="purpose" title="Expand Purpose">
@@ -830,13 +818,13 @@
                     </td>
                     <td>
                         <div style="display:flex; gap:6px; justify-content: center;">
-                            ${val.knowledgeFileUrl ? `
-                            <a href="${val.knowledgeFileUrl}" target="_blank" class="table-action-btn" title="View Knowledge Base File" style="text-decoration:none;">
+                            ${gsFileLink ? `
+                            <button class="table-action-btn view-file-btn" data-gspath="${gsFileLink}" title="View Knowledge Base File">
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:14px; height:14px;">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                 </svg>
-                            </a>
+                            </button>
                             ` : `
                             <div class="table-action-btn" style="opacity: 0.3; cursor: not-allowed;" title="No file uploaded">
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:14px; height:14px;">
@@ -882,6 +870,39 @@
 
     // Handle Table Actions (Event Delegation)
     tableContainer.addEventListener('click', (e) => {
+        
+        // Dynamically open GS File
+        const viewFileBtn = e.target.closest('.view-file-btn');
+        if (viewFileBtn) {
+            const gsPath = viewFileBtn.getAttribute('data-gspath');
+            if (!gsPath) return;
+
+            showStatus("Generating temporary secure link to view file...", "info");
+            
+            // If the database accidentally still has a standard HTTP URL, just open it.
+            if (gsPath.startsWith('http')) {
+                window.open(gsPath, '_blank');
+                showStatus("File opened.", "success");
+                return;
+            }
+
+            // Otherwise, fetch temporary URL for the GS path and open it
+            try {
+                const fileRef = ref(storage, gsPath);
+                getDownloadURL(fileRef).then(url => {
+                    window.open(url, '_blank');
+                    showStatus("File opened.", "success");
+                }).catch(err => {
+                    console.error(err);
+                    showStatus(`Cannot open file: ${err.message}`, "error");
+                });
+            } catch (err) {
+                console.error(err);
+                showStatus("Invalid file path.", "error");
+            }
+            return;
+        }
+
         // Expand Read-Only
         const expandBtn = e.target.closest('.view-expand-btn');
         if (expandBtn) {
@@ -1034,14 +1055,16 @@
             const storagePath = `knowledge/${name}/${file.name}`;
             const fileRef = ref(storage, storagePath);
             await uploadBytes(fileRef, file);
-            const downloadUrl = await getDownloadURL(fileRef);
+            
+            // Build the exact GS URI required by backend systems
+            const gsPath = `gs://${firebaseConfig.storageBucket}/${storagePath}`;
 
             const agentData = {
                 company: company,
                 agentName: name,
                 purpose: purpose,
                 customerHandlingInstructions: instructions,
-                knowledgeFileUrl: downloadUrl
+                knowledgeFilePath: gsPath
             };
 
             await setDoc(doc(db, "ai-agents", name), agentData);
@@ -1103,9 +1126,9 @@
         paginationBar.style.display = 'none';
 
         try {
-            // Find existing agent to keep old file URL if no new file is uploaded
+            // Find existing agent to keep old gs path if no new file is uploaded
             const existingAgent = allAgentsData.find(a => a.id === name);
-            let downloadUrl = existingAgent ? existingAgent.data.knowledgeFileUrl : null;
+            let gsPath = existingAgent ? (existingAgent.data.knowledgeFilePath || existingAgent.data.knowledgeFileUrl) : null;
 
             // Only upload if a new file was provided
             if (editFileInput.files.length > 0) {
@@ -1113,7 +1136,9 @@
                 const storagePath = `knowledge/${name}/${file.name}`;
                 const fileRef = ref(storage, storagePath);
                 await uploadBytes(fileRef, file);
-                downloadUrl = await getDownloadURL(fileRef);
+                
+                // Build new GS Path
+                gsPath = `gs://${firebaseConfig.storageBucket}/${storagePath}`;
             }
 
             const agentData = {
@@ -1121,7 +1146,7 @@
                 agentName: name,
                 purpose: purpose,
                 customerHandlingInstructions: instructions,
-                knowledgeFileUrl: downloadUrl
+                knowledgeFilePath: gsPath
             };
 
             await setDoc(doc(db, "ai-agents", name), agentData, { merge: true });
