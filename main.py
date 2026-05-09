@@ -57,7 +57,7 @@ app.add_middleware(
 
 # Mount static files
 static_dir = Path(__file__).parent / "static"
-app.mount("/live-concierge-agent/static", StaticFiles(directory=static_dir), name="static")
+app.mount("/live-ai-concierge/static", StaticFiles(directory=static_dir), name="static")
 
 # Define the headers once to keep things clean
 NO_CACHE_HEADERS = {
@@ -78,12 +78,12 @@ async def add_cache_control_header(request: Request, call_next):
 # Front End Endpoints
 # ========================================
 
-# @app.get("/live-concierge-agent")
+# @app.get("/live-ai-concierge")
 # async def root():
 #     """Serve the index.html page."""
 #     return FileResponse(Path(__file__).parent / "static" / "index.html", headers=NO_CACHE_HEADERS)
 
-@app.get("/live-concierge-agent/initialize")
+@app.get("/live-ai-concierge/initialize")
 async def root():
     """Serve the initialize.html page."""
     return FileResponse(Path(__file__).parent / "static" / "initialize.html", headers=NO_CACHE_HEADERS)
@@ -92,7 +92,7 @@ async def root():
 # WebSocket Endpoint
 # ========================================
 
-# @app.websocket("/live-concierge-agent/ws/{user_id}/{session_id}")
+# @app.websocket("/live-ai-concierge/ws/{user_id}/{session_id}")
 # async def websocket_endpoint(
 #     websocket: WebSocket,
 #     user_id: str,
