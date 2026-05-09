@@ -1,5 +1,5 @@
 """
-agentfilestore.py
+managefilesearchstore.py
 
 Backend module to manage Gemini File Search stores for Concierge AI Agents.
 """
@@ -207,10 +207,3 @@ def update_agent_file_search(agent_name: str):
     
     print(f"--- Completed File Search Update for '{agent_name}' ---")
     return store
-
-# Example Execution Block
-if __name__ == "__main__":
-    # Ensure you export GEMINI_API_KEY before running this script
-    # e.g., export GEMINI_API_KEY="AIza..."
-    # e.g., create_agent_file_search("SALESBOT_V1")
-    pass
