@@ -287,6 +287,12 @@
         .file-upload-wrapper:hover, .file-upload-wrapper.dragover {
             border-color: rgba(48,209,88,0.5); background: rgba(48,209,88,0.05);
         }
+        .file-upload-wrapper.invalid {
+            border-color: rgba(255,69,58,0.5) !important; background: rgba(255,69,58,0.05) !important;
+        }
+        .file-upload-wrapper.invalid .file-icon, .file-upload-wrapper.invalid .file-text span {
+            color: var(--apple-red);
+        }
         .file-upload-input {
             position: absolute; inset: 0; width: 100%; height: 100%;
             opacity: 0; cursor: pointer; z-index: 2;
@@ -406,14 +412,14 @@
                 <div class="form-group">
                     <label class="form-label">Agent Knowledge Base (File)</label>
                     <div class="file-upload-wrapper" id="drop-zone">
-                        <input type="file" id="agent-file" class="file-upload-input" required>
+                        <input type="file" id="agent-file" class="file-upload-input" accept=".pdf,.doc,.docx" required>
                         <div class="file-upload-content">
                             <div class="file-icon">
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                 </svg>
                             </div>
-                            <div class="file-text" id="file-text-instruction"><span>Click to upload</span> or drag and drop</div>
+                            <div class="file-text" id="file-text-instruction"><span>Click to upload</span> or drag and drop<div style="font-size:11px; opacity:0.6; margin-top:4px;">PDF, DOC, DOCX only</div></div>
                             <div class="file-name-display" id="file-name-display"></div>
                         </div>
                     </div>
@@ -469,14 +475,14 @@
                 <div class="form-group">
                     <label class="form-label">Update Knowledge Base (Optional)</label>
                     <div class="file-upload-wrapper" id="edit-drop-zone">
-                        <input type="file" id="edit-agent-file" class="file-upload-input">
+                        <input type="file" id="edit-agent-file" class="file-upload-input" accept=".pdf,.doc,.docx">
                         <div class="file-upload-content">
                             <div class="file-icon">
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                 </svg>
                             </div>
-                            <div class="file-text" id="edit-file-text-instruction"><span>Upload new file</span> or leave empty to keep current</div>
+                            <div class="file-text" id="edit-file-text-instruction"><span>Upload new file</span> or leave empty to keep current<div style="font-size:11px; opacity:0.6; margin-top:4px;">PDF, DOC, DOCX only</div></div>
                             <div class="file-name-display" id="edit-file-name-display"></div>
                         </div>
                     </div>
@@ -999,14 +1005,31 @@
     });
 
     // Custom File Upload Logic (Create)
+    function validateFileExtension(file) {
+        if (!file) return false;
+        const ext = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+        return ['.pdf', '.doc', '.docx'].includes(ext);
+    }
+
     function updateFileDisplay(file) {
         if (file) {
+            if (!validateFileExtension(file)) {
+                dropZone.classList.add('invalid');
+                fileInstruction.innerHTML = `<span>Invalid file type</span><div style="font-size:11px; opacity:0.8; margin-top:4px;">Must be PDF, DOC, or DOCX</div>`;
+                fileInstruction.style.display = 'block';
+                fileNameDisplay.style.display = 'none';
+                fileInput.value = ''; // Clear input
+                return;
+            }
+            dropZone.classList.remove('invalid');
             fileNameDisplay.textContent = file.name;
             fileNameDisplay.style.display = 'block';
             fileInstruction.style.display = 'none';
         } else {
+            dropZone.classList.remove('invalid');
             fileNameDisplay.textContent = '';
             fileNameDisplay.style.display = 'none';
+            fileInstruction.innerHTML = `<span>Click to upload</span> or drag and drop<div style="font-size:11px; opacity:0.6; margin-top:4px;">PDF, DOC, DOCX only</div>`;
             fileInstruction.style.display = 'block';
         }
     }
@@ -1024,6 +1047,7 @@
 
     function resetCreateForm() {
         createForm.reset();
+        dropZone.classList.remove('invalid');
         updateFileDisplay(null);
         document.querySelectorAll('#create-agent-form .auto-resize').forEach(ta => { ta.style.height = 'auto'; });
     }
@@ -1085,12 +1109,23 @@
 
     function updateEditFileDisplay(file) {
         if (file) {
+            if (!validateFileExtension(file)) {
+                editDropZone.classList.add('invalid');
+                editFileInstruction.innerHTML = `<span>Invalid file type</span><div style="font-size:11px; opacity:0.8; margin-top:4px;">Must be PDF, DOC, or DOCX</div>`;
+                editFileInstruction.style.display = 'block';
+                editFileNameDisplay.style.display = 'none';
+                editFileInput.value = ''; // Clear input
+                return;
+            }
+            editDropZone.classList.remove('invalid');
             editFileNameDisplay.textContent = file.name;
             editFileNameDisplay.style.display = 'block';
             editFileInstruction.style.display = 'none';
         } else {
+            editDropZone.classList.remove('invalid');
             editFileNameDisplay.textContent = '';
             editFileNameDisplay.style.display = 'none';
+            editFileInstruction.innerHTML = `<span>Upload new file</span> or leave empty to keep current<div style="font-size:11px; opacity:0.6; margin-top:4px;">PDF, DOC, DOCX only</div>`;
             editFileInstruction.style.display = 'block';
         }
     }
