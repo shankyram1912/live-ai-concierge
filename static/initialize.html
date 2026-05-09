@@ -803,8 +803,7 @@
             const val = item.data;
             const key = item.id;
             
-            // Support both old knowledgeFileUrl and new knowledgeFilePath during transition
-            const gsFileLink = val.knowledgeFilePath || val.knowledgeFileUrl; 
+            const gsFileLink = val.knowledgeFilePath; 
 
             html += `
                 <tr>
@@ -1163,7 +1162,7 @@
         try {
             // Find existing agent to keep old gs path if no new file is uploaded
             const existingAgent = allAgentsData.find(a => a.id === name);
-            let gsPath = existingAgent ? (existingAgent.data.knowledgeFilePath || existingAgent.data.knowledgeFileUrl) : null;
+            let gsPath = existingAgent ? existingAgent.data.knowledgeFilePath : null;
 
             // Only upload if a new file was provided
             if (editFileInput.files.length > 0) {
