@@ -8,6 +8,7 @@ Usage:
 
 import os
 import sys
+from dotenv import load_dotenv
 
 # Import the methods from your renamed module
 try:
@@ -16,6 +17,9 @@ except ImportError:
     print("Error: Could not import 'managefilesearchstore'.")
     print("Ensure 'managefilesearchstore.py' is in the same directory as this script.")
     sys.exit(1)
+    
+# Load environment variables first
+load_dotenv(override=True)    
 
 def run_tests():
     agent_name = "FARAH"
