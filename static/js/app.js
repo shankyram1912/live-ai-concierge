@@ -150,12 +150,20 @@ function audioRecorderHandler(pcmData) {
  */
 async function connectWebsocket() {
     if (isConnected || isConnecting) return; // Prevent double-taps
+    // 1. Validate Agent Selection
+    const agentSelect = document.getElementById('agent-select');
+    const agentName = agentSelect ? agentSelect.value : "";
+
+    if (!agentName) {
+        alert("Please select a valid Agent from the settings panel before connecting.");
+        return;
+    }
 
     // 2. Set the lock
     isConnecting = true;
     updateConnectionStatus(false);
 
-    // 1. Initialize ADK Hardware AudioWorklets (Handles Mic & Speakers)
+    // 3. Initialize ADK Hardware AudioWorklets (Handles Mic & Speakers)
     try {
         const [pNode, pCtx] = await startAudioPlayerWorklet();
         audioPlayerNode = pNode;
@@ -168,8 +176,6 @@ async function connectWebsocket() {
                 setAgentState('LISTENING');
             }
         };      
-        // PROACTIVE FIX: Force the port to open (fixes Safari/WebKit bugs)
-        // audioPlayerNode.port.start();  
 
         const [rNode, rCtx, stream] = await startAudioRecorderWorklet(audioRecorderHandler);
         audioRecorderNode = rNode;
@@ -184,9 +190,10 @@ async function connectWebsocket() {
         if (micStream) micStream.getTracks().forEach(t => t.stop());
         
         isConnecting = false; // Reset lock so user can try again
+        return;
     }
 
-    // 2. Connect to ADK FastAPI WebSocket Route
+    // 4. Connect to ADK FastAPI WebSocket Route
 
     // Get settings from the UI
     const voice = document.getElementById('voice-select').value;
@@ -201,10 +208,14 @@ async function connectWebsocket() {
     });
 
     const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const wsUrl = `${wsProtocol}//${window.location.host}/live-smarthome-agent/ws/${userId}/${sessionId}?${params.toString()}`;
+    
+    // UPDATED RESTful URL Path mapping back to main.py dynamically
+    const wsUrl = `${wsProtocol}//${window.location.host}/live-ai-concierge/ws/${agentName}/${userId}/${sessionId}?${params.toString()}`;
+    
     websocket = new WebSocket(wsUrl);
 
-    // Force binary messages to be ArrayBuffers, not Blobs, to receive audio stream directly. Does not affect Text Frames, only Binary Frames at the network protocol level.
+    // Force binary messages to be ArrayBuffers, not Blobs, to receive audio stream directly. 
+    // Does not affect Text Frames, only Binary Frames at the network protocol level.
     websocket.binaryType = "arraybuffer";    
 
     websocket.onopen = function () {
