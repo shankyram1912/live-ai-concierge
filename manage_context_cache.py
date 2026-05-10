@@ -10,6 +10,8 @@ from google.cloud import firestore
 from google import genai
 from google.genai import types
 import config
+import datetime
+
 from dotenv import load_dotenv
 
 logger = logging.getLogger(__name__)
