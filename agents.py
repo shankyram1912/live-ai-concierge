@@ -48,8 +48,6 @@ def get_concierge_agent(agent_name: str) -> LlmAgent:
     data = doc.to_dict()
     purpose = data.get("purpose", "")
     instructions = data.get("customerHandlingInstructions", "")
-    
-    logger.info(f"Successfully loaded agent config for: {agent_name}")
 
     # Construct the final dynamic instruction string
     dynamic_instruction = f"""
@@ -63,6 +61,8 @@ def get_concierge_agent(agent_name: str) -> LlmAgent:
 
     {BASE_TOOLS_AND_RULES}
     """
+    
+    logger.info(f"Successfully loaded agent config for: {agent_name}\n {dynamic_instruction}")
 
     return LlmAgent(
         name=agent_name,
