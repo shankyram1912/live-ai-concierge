@@ -27,9 +27,11 @@ warnings.filterwarnings("ignore", category=UserWarning, module="pydantic")
 # Load environment variables first
 load_dotenv(override=True)
 
+MODEL_LOCATION = os.getenv("SUBAGENT_GOOGLE_CLOUD_LOCATION")
+
 def get_genai_client():
     """Initializes the Google GenAI client natively for Vertex AI."""
-    return genai.Client()
+    return genai.Client(location=MODEL_LOCATION)
 
 def ask_agent_with_cache(agent_name: str, question: str) -> str:
     """
