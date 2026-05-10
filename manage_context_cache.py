@@ -88,6 +88,36 @@ def build_agent_cache(agent_name: str, gs_path: str, purpose: str, instructions:
     logger.info(f"[{agent_name}] Cache created successfully: {cached_content.name}, expiring at {cached_content.expire_time}.")
     return cached_content
 
+def get_agent_cache_name(agent_name: str):
+    """
+    Retrieves the stored system cache name (e.g., 'cachedContents/123') 
+    for the given agent from Firestore.
+    Returns the cache name if found, or None if it doesn't exist.
+    """
+    db = get_firestore_client()
+    
+    try:
+        doc_ref = db.collection('ai-agents').document(agent_name)
+        doc = doc_ref.get()
+        
+        if doc.exists:
+            data = doc.to_dict()
+            cache_name = data.get('agentCacheName')
+            
+            if cache_name:
+                logger.info(f"[{agent_name}] Retrieved cache name from DB: {cache_name}")
+                return cache_name
+            else:
+                logger.warning(f"[{agent_name}] Document exists, but 'agentCacheName' is missing.")
+                return None
+        else:
+            logger.warning(f"[{agent_name}] Agent not found in database.")
+            return None
+            
+    except Exception as e:
+        logger.error(f"[{agent_name}] Error retrieving cache name from Firestore: {e}")
+        return None
+
 # ----------------------------------------------------------------------------
 # Main Orchestration Methods
 # ----------------------------------------------------------------------------
@@ -118,10 +148,18 @@ def create_agent_cache(agent_name: str):
     delete_agent_cache(agent_name)
     
     # Build the new cache
-    store = build_agent_cache(agent_name, gs_path, purpose, instructions)
+    cache = build_agent_cache(agent_name, gs_path, purpose, instructions)
     
+    # Store the system cache name back in Firestore
+    try:
+        # Using store.name to get the system identifier (e.g., "cachedContents/123")
+        doc_ref.update({"agentCacheName": cache.name})
+        logger.info(f"[{agent_name}] Successfully saved cache name '{cache.name}' to database.")
+    except Exception as e:
+        logger.error(f"[{agent_name}] Failed to save cache name to database. Error: {e}")
+        
     logger.info(f"--- Completed Context Cache Creation for '{agent_name}' ---")
-    return store
+    return cache
 
 def update_agent_cache(agent_name: str):
     """
@@ -132,35 +170,70 @@ def update_agent_cache(agent_name: str):
     logger.info(f"--- Starting Context Cache Update for '{agent_name}' ---")
     
     # For content changes, a full recreate is required, so we just wrap the create function
-    store = create_agent_cache(agent_name)
+    cache = create_agent_cache(agent_name)
     
     logger.info(f"--- Completed Context Cache Update for '{agent_name}' ---")
-    return store
+    return cache
 
 def delete_agent_cache(agent_name: str):
-    """Checks if a Context Cache exists for the agent and deletes it."""
+    """
+    Deletes the Context Cache for the agent using the stored ID from Firestore.
+    Clears the database reference once deleted.
+    """
     client = get_genai_client()
     
-    logger.info(f"[{agent_name}] Checking for existing Context Caches...")
+    logger.info(f"[{agent_name}] Checking database for existing cache ID...")
     
-    # List and delete matching caches
-    for cache in client.caches.list():
-        if cache.display_name == agent_name:
-            logger.info(f"[{agent_name}] Found existing cache '{cache.name}'. Deleting...")
-            client.caches.delete(name=cache.name)
-            logger.info(f"[{agent_name}] Successfully deleted old cache.")
+    # 1. Get the exact system cache name from Firestore
+    cache_name = get_agent_cache_name(agent_name)
+    
+    if not cache_name:
+        logger.info(f"[{agent_name}] No cache name found in database. Nothing to delete.")
+        return
+
+    # 2. Delete the cache directly by its name
+    logger.info(f"[{agent_name}] Found cache ID '{cache_name}'. Deleting from Gemini API...")
+    try:
+        client.caches.delete(name=cache_name)
+        logger.info(f"[{agent_name}] Successfully deleted cache '{cache_name}'.")
+    except Exception as e:
+        # It's common for caches to expire naturally, which throws a 404 here
+        logger.error(f"[{agent_name}] Error deleting cache from API (it may have already expired): {e}")
+
+    # 3. Clean up the Firestore document
+    try:
+        db = get_firestore_client()
+        doc_ref = db.collection('ai-agents').document(agent_name)
+        # Remove the field entirely from the document
+        doc_ref.update({"agentCacheName": firestore.DELETE_FIELD})
+        logger.info(f"[{agent_name}] Cleared cache reference from database.")
+    except Exception as db_err:
+        logger.error(f"[{agent_name}] Failed to clear cache reference from DB: {db_err}")
             
-def check_agent_cache(agent_name: str) -> bool:
-    """Checks if a Context Cache exists for the agent."""
+def get_agent_cache(agent_name: str):
+    """
+    Checks if a Context Cache exists for the agent using the stored ID in Firestore.
+    Returns the CachedContent object if found, or None if it does not exist or an error occurs.
+    """
     client = get_genai_client()
     
-    logger.info(f"[{agent_name}] Checking for existing Context Caches...")
+    logger.info(f"[{agent_name}] Looking up cache ID in database...")
     
-    # List caches and return True if a match is found
-    for cache in client.caches.list():
-        if cache.display_name == agent_name:
-            logger.info(f"[{agent_name}] Found existing cache '{cache.name}'.")
-            return True
-            
-    logger.info(f"[{agent_name}] No existing cache found.")
-    return False            
+    # 1. Fetch the exact system cache name from Firestore
+    cache_name = get_agent_cache_name(agent_name)
+    
+    if not cache_name:
+        logger.info(f"[{agent_name}] No cache name found in database.")
+        return None
+
+    logger.info(f"[{agent_name}] Retrieving cache '{cache_name}' from Gemini API...")
+    
+    # 2. Retrieve the cache directly using the name
+    try:
+        cache = client.caches.get(name=cache_name)
+        logger.info(f"[{agent_name}] Successfully retrieved cache from API.")
+        return cache
+    except Exception as e:
+        # Catch and log all errors (404 if expired, network issues, etc.)
+        logger.error(f"[{agent_name}] Error retrieving cache '{cache_name}': {e}")
+        return None

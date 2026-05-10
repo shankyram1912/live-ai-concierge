@@ -39,9 +39,16 @@ def ask_agent_with_cache(agent_name: str, question: str) -> str:
     
     logger.info(f"[{agent_name}] Looking for active context cache...")
             
-    if not manage_context_cache.check_agent_cache(agent_name):
-        logger.info(f"No active context cache found for agent '{agent_name}'. Please run create_agent_cache() first.")
-        manage_context_cache.create_agent_cache(agent_name)
+    # Attempt to retrieve the existing cache
+    cache = manage_context_cache.get_agent_cache(agent_name)
+
+    if not cache:
+        logger.info(f"No active context cache found for agent '{agent_name}'. Creating a new one...")
+        # This builds the cache, saves the ID to the DB, and returns the cache object
+        cache = manage_context_cache.create_agent_cache(agent_name)
+
+    # Save the system name (e.g., "cachedContents/123") into your variable
+    active_cache_name = cache.name
         
     logger.info(f"[{agent_name}] Querying Gemini using Context Cache...")
     
