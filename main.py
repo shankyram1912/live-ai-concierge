@@ -246,35 +246,6 @@ async def websocket_endpoint(
             run_config=run_config,
         ):
             event_json = event.model_dump_json(exclude_none=True, by_alias=True)
-            event_dict = json.loads(event_json)
-            
-            # Print logs for visibility
-#                 event_type = None
-#                 is_audio_stream = False
-                
-#                 if event.content and event.content.parts:
-#                     part = event.content.parts[0]
-                    
-#                     if part.inline_data:
-#                         event_type = f"AUDIO {part.inline_data.mime_type} Received {len(part.inline_data.data)} bytes"
-#                     elif part.text:
-#                         event_type = f"TEXT {part.text} IS_PARTIAL {event.partial} TURN_COMPLETE {event.turn_complete}"
-#                     for part in event.content.parts:
-#                         if part.function_call:
-#                             event_type = f"MODEL FUNCTION CALL {part.function_call.name} INPUT PARAMS {part.function_call.args}"
-#                         elif part.function_response:
-#                             event_type = f"USER FUNCTION CALL RESPONSE {part.function_response.name} OUTPUT PARAMS {part.function_response.response}"                        
-                        
-#                 if event.input_transcription:
-#                     event_type = f"🗣️ USER TALKING: {event.input_transcription.text} IS_FINISHED {event.input_transcription.finished} IS_PARTIAL {event.partial} TURN_COMPLETE {event.turn_complete}"                        
-#                 elif event.output_transcription:
-#                     event_type = f"🤖 AI AGENT TALKING: {event.output_transcription.text} IS_FINISHED {event.output_transcription.finished} IS_PARTIAL {event.partial} TURN_COMPLETE {event.turn_complete}"                        
-                    
-#                 # Uncomment for event logging
-#                 #if event_type:
-#                 #    print(f"++ {event_type}", flush=True)
-#                 # else:
-#                 #     print(f"xx UNTAGGED EVENT {event_dict}", flush=True)
             
             if event.input_transcription and event.input_transcription.finished:
                 print("\n" + "-"*50)
