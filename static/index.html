@@ -1045,7 +1045,14 @@
                     <option value="zephyr">Zephyr (Female)</option>
                     <option value="zubenelgenubi">Zubenelgenubi (Male)</option>
                 </select>
-            </div>            
+            </div>
+            <!-- NEW AGENT DROPDOWN -->
+            <div class="setting-item">
+                <span class="setting-label">Agent</span>
+                <select class="premium-dropdown" id="agent-select">
+                    <option value="">Loading...</option>
+                </select>
+            </div>                        
             <div class="setting-item">
                 <span class="setting-label">Affective Dialog</span>
                 <div class="toggle-switch" id="affective-toggle"></div>
@@ -1167,7 +1174,63 @@
     </div>   
 
     <script type="module">
-        // --- NEW: SETTINGS TOGGLE LOGIC ---
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+        // --- FIREBASE CONFIGURATION ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyAU4978uMcFABSTmOtC70ySsAP4yoJpqv8",
+            authDomain: "genai-e2e-demos.firebaseapp.com",
+            projectId: "genai-e2e-demos",
+            storageBucket: "genai-e2e-demos.firebasestorage.app",
+            messagingSenderId: "554686566379",
+            appId: "1:554686566379:web:3e4133f3779dff6de913ae"
+        };
+
+        let db;
+        try {
+            const app = initializeApp(firebaseConfig);
+            db = getFirestore(app, "live-concierge-ai");
+        } catch (e) {
+            console.error("Firebase init failed:", e);
+        }
+
+        // --- NEW: FETCH AGENTS FROM FIRESTORE ---
+        async function loadAgents() {
+            const agentSelect = document.getElementById('agent-select');
+            if (!agentSelect || !db) return;
+
+            try {
+                // Create a query against the collection, checking for isKnowledgeBaseReady == true
+                const agentsRef = collection(db, "ai-agents");
+                const q = query(agentsRef, where("isKnowledgeBaseReady", "==", true));
+                const querySnapshot = await getDocs(q);
+
+                agentSelect.innerHTML = ''; // Clear the "Loading..." placeholder
+
+                if (querySnapshot.empty) {
+                    const option = document.createElement('option');
+                    option.value = "";
+                    option.text = "No Ready Agents Found";
+                    agentSelect.appendChild(option);
+                    return;
+                }
+
+                // Populate the dropdown
+                querySnapshot.forEach((doc) => {
+                    const option = document.createElement('option');
+                    option.value = doc.id;
+                    option.text = doc.id; // Or you could use doc.data().agentName if it's different
+                    agentSelect.appendChild(option);
+                });
+
+            } catch (error) {
+                console.error("Error fetching agents:", error);
+                agentSelect.innerHTML = '<option value="">Error Loading Agents</option>';
+            }
+        }
+
+        // --- EXISTING: SETTINGS TOGGLE LOGIC ---
         document.addEventListener('DOMContentLoaded', () => {
             const settingsBtn = document.getElementById('settings-btn');
             const settingsPanel = document.getElementById('settings-panel');
@@ -1186,6 +1249,9 @@
                     switchEl.classList.toggle('active');
                 });
             });
+
+            // Trigger the agent load when the page is ready
+            loadAgents();
         });
 
         window.setAgentState = function(state) {
