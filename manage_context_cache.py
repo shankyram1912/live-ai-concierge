@@ -90,7 +90,7 @@ def build_agent_cache(agent_name: str, gs_path: str, purpose: str, instructions:
     logger.info(f"[{agent_name}] Cache created successfully: {cached_content.name}, expiring at {cached_content.expire_time}.")
     return cached_content
 
-def get_agent_cache_name(agent_name: str):
+def get_concierge_agent_cache_name(agent_name: str):
     """
     Retrieves the stored system cache name (e.g., 'cachedContents/123') 
     for the given agent from Firestore.
@@ -187,7 +187,7 @@ def delete_agent_cache(agent_name: str):
     logger.info(f"[{agent_name}] Checking database for existing cache ID...")
     
     # 1. Get the exact system cache name from Firestore
-    cache_name = get_agent_cache_name(agent_name)
+    cache_name = get_concierge_agent_cache_name(agent_name)
     
     if not cache_name:
         logger.info(f"[{agent_name}] No cache name found in database. Nothing to delete.")
@@ -212,7 +212,7 @@ def delete_agent_cache(agent_name: str):
     except Exception as db_err:
         logger.error(f"[{agent_name}] Failed to clear cache reference from DB: {db_err}")
             
-def get_agent_cache(agent_name: str):
+def get_concierge_agent_cache(agent_name: str):
     """
     Checks if a Context Cache exists for the agent using the stored ID in Firestore.
     Returns the CachedContent object if found, or None if it does not exist or an error occurs.
@@ -222,7 +222,7 @@ def get_agent_cache(agent_name: str):
     logger.info(f"[{agent_name}] Looking up cache ID in database...")
     
     # 1. Fetch the exact system cache name from Firestore
-    cache_name = get_agent_cache_name(agent_name)
+    cache_name = get_concierge_agent_cache_name(agent_name)
     
     if not cache_name:
         logger.info(f"[{agent_name}] No cache name found in database.")

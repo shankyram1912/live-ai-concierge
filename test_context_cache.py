@@ -44,7 +44,7 @@ if __name__ == "__main__":
     logger.info(f"[{agent_name}] Looking for active context cache...")
             
     # Attempt to retrieve the existing cache
-    cache = manage_context_cache.get_agent_cache(agent_name)
+    cache = manage_context_cache.get_concierge_agent_cache(agent_name)
 
     if not cache:
         logger.info(f"No active context cache found for agent '{agent_name}'. Creating a new one...")

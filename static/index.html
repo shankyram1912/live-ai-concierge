@@ -1104,17 +1104,6 @@
                 <div class="agent-subtitle">ADK Agent (Gemini Live Flash 2.5)</div>
             </div>
 
-            <!-- REGISTERED DEVICES SECTION -->
-            <div class="vital-group"
-                style="margin-top: 12px; padding-top: 12px; padding-bottom: 12px; border-top: 1px solid rgba(255,255,255,0.06); border-bottom: 1px solid rgba(255,255,255,0.06);">
-                <div class="vital-row" style="align-items: center;">
-                    <span style="color: #FFFFFF; font-weight: 600; font-size: 14px;">Registered Devices</span>
-                    <span style="color: #FFFFFF; font-weight: 800; font-size: 24px; line-height: 1;"
-                        id="device-count">0</span>
-                </div>
-
-            </div>
-
             <!-- ID added here for app.js to bind the connection -->
             <div class="orb-interaction-zone" id="orb-button">
                 <div class="orb-container state-idle" id="orb-state">
@@ -1178,9 +1167,6 @@
     </div>   
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
-        import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
-
         // --- NEW: SETTINGS TOGGLE LOGIC ---
         document.addEventListener('DOMContentLoaded', () => {
             const settingsBtn = document.getElementById('settings-btn');
@@ -1202,42 +1188,6 @@
             });
         });
 
-        // --- 1. FIREBASE SETUP ---
-        const firebaseConfig = {
-            apiKey: "AIzaSyAU4978uMcFABSTmOtC70ySsAP4yoJpqv8",
-            authDomain: "genai-e2e-demos.firebaseapp.com",
-            projectId: "genai-e2e-demos",
-            storageBucket: "genai-e2e-demos.firebasestorage.app",
-            messagingSenderId: "554686566379",
-            appId: "1:554686566379:web:5b543c4b169319ffe913ae"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app, "live-smartcamera");
-
-        // EXPORT TO WINDOW SO APP.JS CAN READ THE DEVICE DATA
-        window.devicesData = []; 
-
-        // --- 4. REAL-TIME FIRESTORE LISTENER ---
-        const docRef = doc(db, "home-users", "default");
-        
-        onSnapshot(docRef, (docSnap) => {
-            if (docSnap.exists()) {
-                const data = docSnap.data();
-                if (data.devices) {
-                    
-                    window.devicesData = Object.values(data.devices);
-                    window.devicesData.sort((a, b) => a.id.localeCompare(b.id));
-                    
-                    const deviceCountEl = document.getElementById('device-count');
-                    if (deviceCountEl) deviceCountEl.innerText = window.devicesData.length;
-                }
-            } else {
-                console.warn("No such document found in Firestore!");
-            }
-        });
-
-        // --- 5. UI VISUAL EXPORTS (For app.js to trigger animations) ---
         window.setAgentState = function(state) {
             const orbContainer = document.getElementById('orb-state');
             const micText = document.getElementById('mic-text');

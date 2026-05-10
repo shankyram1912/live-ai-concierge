@@ -26,7 +26,8 @@ from google.adk.sessions import InMemorySessionService
 from google.genai import types
 from google.genai.types import ProactivityConfig
 
-from agents import concierge_agent
+# Import dynamic getter instead of static agent
+from agents import get_concierge_agent  
 import agent_knowledge
 
 # Configure logging
@@ -46,8 +47,6 @@ app_name = config.APP_NAME
 
 app = FastAPI(title="Concierge AI Agent")
 session_service = InMemorySessionService()
-agent = concierge_agent
-runner = Runner(app_name=app_name, agent=agent, session_service=session_service)
 
 # CORS configuration
 app.add_middleware(
@@ -86,7 +85,7 @@ async def root():
     return FileResponse(Path(__file__).parent / "static" / "index.html", headers=NO_CACHE_HEADERS)
 
 @app.get("/live-ai-concierge/initialize")
-async def root():
+async def init_page():
     """Serve the initialize.html page."""
     return FileResponse(Path(__file__).parent / "static" / "initialize.html", headers=NO_CACHE_HEADERS)
 
@@ -117,130 +116,139 @@ async def save_agent(agent_name: str):
 # WebSocket Endpoint
 # ========================================
 
-# @app.websocket("/live-ai-concierge/ws/{user_id}/{session_id}")
-# async def websocket_endpoint(
-#     websocket: WebSocket,
-#     user_id: str,
-#     session_id: str,
-#     voice: Optional[str] = "aoede",              # Defaults to 'aoede'
-#     affective_dialog: Optional[bool] = False,    # Auto-converts "true" to True
-#     proactive_audio: Optional[bool] = False      # Auto-converts "false" to False    
-# ) -> None:    
+@app.websocket("/live-ai-concierge/ws/{agent_name}/{user_id}/{session_id}")
+async def websocket_endpoint(
+    websocket: WebSocket,
+    agent_name: str,
+    user_id: str,
+    session_id: str,
+    voice: Optional[str] = "aoede",              # Defaults to 'aoede'
+    affective_dialog: Optional[bool] = False,    # Auto-converts "true" to True
+    proactive_audio: Optional[bool] = False      # Auto-converts "false" to False    
+) -> None:    
     
-#     logger.info(
-#         f"WebSocket connection request: user_id={user_id}, session_id={session_id}"
-#     )    
-#     await websocket.accept()
-#     logger.info("WebSocket connection accepted")
-#     logger.info(f"Settings - Voice: {voice}, Affective: {affective_dialog}, Proactive: {proactive_audio}")
+    logger.info(
+        f"WebSocket connection request: agent={agent_name}, user_id={user_id}, session_id={session_id}"
+    )    
+    await websocket.accept()
+    logger.info("WebSocket connection accepted")
+    logger.info(f"Settings - Voice: {voice}, Affective: {affective_dialog}, Proactive: {proactive_audio}")
 
-#     # Get or create session
-#     session = await session_service.get_session(
-#         app_name=app_name, user_id=user_id, session_id=session_id
-#     )
-#     if not session:
-#         await session_service.create_session(
-#             app_name=app_name, user_id=user_id, session_id=session_id
-#         )
+    # Fetch Agent Dynamically from Firestore (Run in Threadpool so we don't block the event loop)
+    try:
+        agent = await run_in_threadpool(get_concierge_agent, agent_name)
+        logger.info(f"Successfully loaded agent profile for: {agent_name}")
+    except Exception as e:
+        logger.error(f"Failed to load agent '{agent_name}': {e}")
+        await websocket.close(code=1008, reason=f"Agent load failed: {str(e)}")
+        return
 
-#     # ========================================
-#     # Phase 2: Session Initialization 
-#     # ========================================
+    # Initialize a localized Runner for this specific connection
+    runner = Runner(app_name=app_name, agent=agent, session_service=session_service)
 
-#     response_modalities = ["AUDIO"]
+    # Get or create session
+    session = await session_service.get_session(
+        app_name=app_name, user_id=user_id, session_id=session_id
+    )
+    if not session:
+        await session_service.create_session(
+            app_name=app_name, user_id=user_id, session_id=session_id
+        )
+
+    # ========================================
+    # Phase 2: Session Initialization 
+    # ========================================
+
+    response_modalities = ["AUDIO"]
         
-#     run_config = RunConfig(
-#         streaming_mode=StreamingMode.BIDI,
-#         response_modalities=response_modalities,
-#         speech_config=types.SpeechConfig(
-#             voice_config=types.VoiceConfig(
-#                 prebuilt_voice_config=types.PrebuiltVoiceConfig(
-#                     voice_name=voice
-#                 )
-#             )
-#         ),            
-#         input_audio_transcription=types.AudioTranscriptionConfig(),
-#         output_audio_transcription=types.AudioTranscriptionConfig(),
-#         # Note session resumption only works for Vertex AI, not Gemini API
-#         session_resumption=types.SessionResumptionConfig(),
-#         proactivity=ProactivityConfig(proactive_audio=proactive_audio),
-#         enable_affective_dialog=affective_dialog
-#     )
+    run_config = RunConfig(
+        streaming_mode=StreamingMode.BIDI,
+        response_modalities=response_modalities,
+        speech_config=types.SpeechConfig(
+            voice_config=types.VoiceConfig(
+                prebuilt_voice_config=types.PrebuiltVoiceConfig(
+                    voice_name=voice
+                )
+            )
+        ),            
+        input_audio_transcription=types.AudioTranscriptionConfig(),
+        output_audio_transcription=types.AudioTranscriptionConfig(),
+        # Note session resumption only works for Vertex AI, not Gemini API
+        session_resumption=types.SessionResumptionConfig(),
+        proactivity=ProactivityConfig(proactive_audio=proactive_audio),
+        enable_affective_dialog=affective_dialog
+    )
 
-#     live_request_queue = LiveRequestQueue()
+    live_request_queue = LiveRequestQueue()
 
-#     # ========================================
-#     # Phase 3: Active Session Tasks
-#     # ========================================
+    # ========================================
+    # Phase 3: Active Session Tasks
+    # ========================================
 
-#     async def upstream_task() -> None:
-#         """Receives messages from WebSocket and sends to LiveRequestQueue."""
-#         logger.info("upstream_task started")
-#         while True:
-#             try:
-#                 message = await websocket.receive()
+    async def upstream_task() -> None:
+        """Receives messages from WebSocket and sends to LiveRequestQueue."""
+        logger.info("upstream_task started")
+        while True:
+            try:
+                message = await websocket.receive()
 
-#                 # NEW: Cleanly break the loop if the frontend sends a disconnect signal
-#                 if message.get("type") == "websocket.disconnect":
-#                     logger.info("Frontend explicitly closed the connection. Stopping upstream task.")
-#                     live_request_queue.close()
-#                     break
+                # Cleanly break the loop if the frontend sends a disconnect signal
+                if message.get("type") == "websocket.disconnect":
+                    logger.info("Frontend explicitly closed the connection. Stopping upstream task.")
+                    live_request_queue.close()
+                    break
 
-#                 if "bytes" in message:
-#                     audio_blob = types.Blob(
-#                         mime_type="audio/pcm;rate=16000", data=message["bytes"]
-#                     )
-#                     logger.debug("Frontend sent AUDIO.")
-#                     live_request_queue.send_realtime(audio_blob)
+                if "bytes" in message:
+                    audio_blob = types.Blob(
+                        mime_type="audio/pcm;rate=16000", data=message["bytes"]
+                    )
+                    logger.debug("Frontend sent AUDIO.")
+                    live_request_queue.send_realtime(audio_blob)
 
-#                 elif "text" in message:
-#                     json_message = json.loads(message["text"])
+                elif "text" in message:
+                    json_message = json.loads(message["text"])
                     
-#                     logger.info(f"Frontend sent TEXT - {json_message}")
+                    logger.info(f"Frontend sent TEXT - {json_message}")
 
-#                     if json_message.get("type") == "text":
-#                         content = types.Content(
-#                             parts=[types.Part(text=json_message["text"])]
-#                         )
-#                         #live_request_queue.send_realtime(content) # Note: changed send_content to send_realtime for text in bidi
-#                         live_request_queue.send_content(content)
+                    if json_message.get("type") == "text":
+                        content = types.Content(
+                            parts=[types.Part(text=json_message["text"])]
+                        )
+                        live_request_queue.send_content(content)
 
-#                     elif json_message.get("type") == "image":
-#                         logger.info(f"Frontend sent IMAGE")
-#                         image_data = base64.b64decode(json_message["data"])
-#                         mime_type = json_message.get("mimeType", "image/jpeg")
-#                         image_blob = types.Blob(
-#                             mime_type=mime_type, data=image_data
-#                         )
-#                         live_request_queue.send_realtime(image_blob)
-#             except RuntimeError as e:
-#                 if "disconnect message" in str(e):
-#                     logger.info("Caught disconnect RuntimeError, stopping upstream task.")
-#                     break
-#                 logger.error(f"Unexpected RuntimeError in upstream_task: {e}")
-#                 break
+                    elif json_message.get("type") == "image":
+                        logger.info(f"Frontend sent IMAGE")
+                        image_data = base64.b64decode(json_message["data"])
+                        mime_type = json_message.get("mimeType", "image/jpeg")
+                        image_blob = types.Blob(
+                            mime_type=mime_type, data=image_data
+                        )
+                        live_request_queue.send_realtime(image_blob)
+            except RuntimeError as e:
+                if "disconnect message" in str(e):
+                    logger.info("Caught disconnect RuntimeError, stopping upstream task.")
+                    break
+                logger.error(f"Unexpected RuntimeError in upstream_task: {e}")
+                break
             
-#             except WebSocketDisconnect:
-#                 logger.info("WebSocket disconnect exception caught.")
-#                 break                        
+            except WebSocketDisconnect:
+                logger.info("WebSocket disconnect exception caught.")
+                break                        
 
-#     async def downstream_task() -> None:
-#             """Receives Events from run_live() and sends to WebSocket."""
-#             logger.info("downstream_task started")
+    async def downstream_task() -> None:
+        """Receives Events from run_live() and sends to WebSocket."""
+        logger.info("downstream_task started")
+        
+        async for event in runner.run_live(
+            user_id=user_id,
+            session_id=session_id,
+            live_request_queue=live_request_queue,
+            run_config=run_config,
+        ):
+            event_json = event.model_dump_json(exclude_none=True, by_alias=True)
+            event_dict = json.loads(event_json)
             
-#             last_user_text = ""
-#             # We now use a list to accumulate the AI's word chunks
-#             ai_text_buffer = [] 
-
-#             async for event in runner.run_live(
-#                 user_id=user_id,
-#                 session_id=session_id,
-#                 live_request_queue=live_request_queue,
-#                 run_config=run_config,
-#             ):
-#                 event_json = event.model_dump_json(exclude_none=True, by_alias=True)
-#                 event_dict = json.loads(event_json)
-                
+            # Print logs for visibility
 #                 event_type = None
 #                 is_audio_stream = False
                 
@@ -267,48 +275,49 @@ async def save_agent(agent_name: str):
 #                 #    print(f"++ {event_type}", flush=True)
 #                 # else:
 #                 #     print(f"xx UNTAGGED EVENT {event_dict}", flush=True)
-                
-#                 if event.input_transcription and event.input_transcription.finished:
-#                     print("\n" + "-"*50)
-#                     print(f"🗣️ USER FINISHED: {event.input_transcription.text}")
-#                     print("-" *50 + "\n", flush=True)                        
-#                 elif event.output_transcription and event.output_transcription.finished:
-#                     print("\n" + "="*50)
-#                     print(f"🤖 AI AGENT FINISHED: {event.output_transcription.text}")
-#                     print("="*50 + "\n", flush=True)                 
-               
-#                 # Always forward the raw event to the frontend (for audio), everything else is JSON
-#                 if event.content and event.content.parts:
-#                     part = event.content.parts[0]
-#                     if part.inline_data:                                                
-#                         if hasattr(part, 'inline_data') and part.inline_data:
-#                             if hasattr(part.inline_data, 'data') and part.inline_data.data:
-#                                 logger.debug(f"### SENDING AUDIO RESPONSE TO FRONTEND")                                
-#                                 await websocket.send_bytes(part.inline_data.data)
-#                     else:                
-#                         logger.info(f"### RESPONSE TO FRONTEND - {event_json}")
-#                         await websocket.send_text(event_json)                    
-#                 else:                
-#                     logger.info(f"### RESPONSE TO FRONTEND - {event_json}")
-#                     await websocket.send_text(event_json)
+            
+            if event.input_transcription and event.input_transcription.finished:
+                print("\n" + "-"*50)
+                print(f"🗣️ USER FINISHED: {event.input_transcription.text}")
+                print("-" *50 + "\n", flush=True)                        
+            elif event.output_transcription and event.output_transcription.finished:
+                print("\n" + "="*50)
+                print(f"🤖 AI AGENT FINISHED: {event.output_transcription.text}")
+                print("="*50 + "\n", flush=True)                 
+            
+            # Always forward the raw event to the frontend (for audio), everything else is JSON
+            if event.content and event.content.parts:
+                part = event.content.parts[0]
+                if part.inline_data:                                                
+                    if hasattr(part, 'inline_data') and part.inline_data:
+                        if hasattr(part.inline_data, 'data') and part.inline_data.data:
+                            logger.debug(f"### SENDING AUDIO RESPONSE TO FRONTEND")                                
+                            await websocket.send_bytes(part.inline_data.data)
+                else:                
+                    logger.info(f"### RESPONSE TO FRONTEND - {event_json}")
+                    await websocket.send_text(event_json)                    
+            else:                
+                logger.info(f"### RESPONSE TO FRONTEND - {event_json}")
+                await websocket.send_text(event_json)
 
-#     # ========================================
-#     # Run the Concurrent Tasks
-#     # ========================================
-#     try:
-#         logger.info("Starting asyncio.gather for tasks")
-#         await asyncio.gather(
-#             upstream_task(), 
-#             downstream_task(),
-#             # silence_monitor_task()
-#         )
-#     except WebSocketDisconnect:
-#         logger.info("Client disconnected normally")
-#     except Exception as e:
-#         logger.error(f"Unexpected error: {e}", exc_info=True)
-#     finally:
-#         logger.info("Closing live_request_queue")
-#         live_request_queue.close()
+    # ========================================
+    # Run the Concurrent Tasks
+    # ========================================
+    try:
+        logger.info("Starting asyncio.gather for tasks")
+        await asyncio.gather(
+            upstream_task(), 
+            downstream_task(),
+        )
+    except WebSocketDisconnect:
+        logger.info("Client disconnected normally")
+    except asyncio.CancelledError:
+        logger.info("Server shutting down. Cancelling active WebSocket tasks...")        
+    except Exception as e:
+        logger.error(f"Unexpected error: {e}", exc_info=True)
+    finally:
+        logger.info("Closing live_request_queue")
+        live_request_queue.close()
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8003, reload=True)
