@@ -17,7 +17,6 @@ load_dotenv(override=True)
 # Database Path Constants
 # ----------------------------------------------------------------------------
 ORDERS_COLLECTION = "orders"
-DIRECTORY_DOCUMENT = "directory"
 SYSTEM_METADATA_COLLECTION = os.getenv("FIRESTORE_SYSTEM_METADATA", "system_metadata")
 ORDER_COUNTER_DOCUMENT = os.getenv("FIRESTORE_ORDER_COUNTER", "order_counter")
 
@@ -26,7 +25,7 @@ ORDER_COUNTER_DOCUMENT = os.getenv("FIRESTORE_ORDER_COUNTER", "order_counter")
 # Transaction Helper (Must be outside the class for Firestore to use it)
 # ----------------------------------------------------------------------------
 @firestore.transactional
-def _execute_order_transaction(transaction, db, counter_ref, agent_name, order_data):
+def _execute_order_transaction(transaction, db, counter_ref, order_data):
     """
     Runs the atomic transaction to safely increment the counter and save the order.
     Returns the finalized document dictionary.
@@ -48,13 +47,8 @@ def _execute_order_transaction(transaction, db, counter_ref, agent_name, order_d
     # 4. Inject the purely numeric order_id inside the document
     order_data['order_id'] = new_order_number
     
-    # 5. Define the path using the module constants
-    order_ref = (
-        db.collection(ORDERS_COLLECTION)
-        .document(DIRECTORY_DOCUMENT)
-        .collection(agent_name)
-        .document(str(new_order_number))
-    )
+    # 5. Define the flattened path directly in the root orders collection
+    order_ref = db.collection(ORDERS_COLLECTION).document(str(new_order_number))
     
     # 6. Save the document to Firestore
     transaction.set(order_ref, order_data)
@@ -115,20 +109,20 @@ class Tools:
             
             # Map the arguments directly into the specific schema structure
             order_data = {
-                "agent_name": agent_name,
                 "contact_number": contact_number,
                 "created_at": firestore.SERVER_TIMESTAMP,
                 "order_details": {
+                    "agent_name": agent_name,
                     "delivery_date": str(delivery_date), 
                     "delivery_address": delivery_address,
                     "full_order_details": full_order_details
                 }
             }
             
-            # Execute the transaction
+            # Execute the transaction (agent_name removed from parameters as path is flattened)
             transaction = self.db.transaction()
             saved_document_dict = _execute_order_transaction(
-                transaction, self.db, counter_ref, agent_name, order_data
+                transaction, self.db, counter_ref, order_data
             )
             
             logger.info(f"[{agent_name}] Order successfully saved with ID: {saved_document_dict.get('order_id')}")
@@ -150,12 +144,11 @@ class Tools:
             if not getattr(self, 'db', None):
                 return {"error": "Database connection not initialized. Cannot retrieve orders."}
             
-            # Look directly in the agent's specific collection, filtered, ordered, and limited
+            # Query the root collection directly, utilizing the nested agent_name filter
             orders_query = (
                 self.db.collection(ORDERS_COLLECTION)
-                .document(DIRECTORY_DOCUMENT)
-                .collection(agent_name)
-                .where('contact_number', '==', contact_number)
+                .where(filter=firestore.FieldFilter('contact_number', '==', contact_number))
+                .where(filter=firestore.FieldFilter('order_details.agent_name', '==', agent_name))
                 .order_by('order_id', direction=firestore.Query.DESCENDING)
                 .limit(50)
                 .stream()
@@ -190,7 +183,7 @@ if __name__ == "__main__":
         tools = Tools()
         
         test_agent = "TINA"
-        test_contact = "0123456789"
+        test_contact = "+60123456789"
         
         print("\n--- Testing: finalize_order ---")
         order_result = tools.finalize_order(
