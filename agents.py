@@ -27,7 +27,8 @@ db = get_firestore_client()
 # Static Base Instructions
 # ==========================================
 BASE_TOOLS_AND_RULES = """
-
+    1. STRICTLY ANSWER BASED ON THE KNOWLEDGE BASE. DO NOT MAKE UP FACTS OUTSIDE OF IT. IF YOU DO NOT HAVE THE ANSWER, STATE APPROPRIATELY
+    2. ONLY ADDRESS QUESTIONS RELATED TO THE CUSTOMER CONTEXT
 """
 
 # ==========================================
