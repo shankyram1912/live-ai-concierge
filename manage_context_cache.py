@@ -2,6 +2,8 @@
 manage_context_cache.py
 
 Backend module to manage Vertex AI Context Caches for Concierge AI Agents.
+
+Deprecated module as this was originally intended to be leveraged for an agent based tool that would answer based on file in context cache
 """
 
 import os
@@ -19,7 +21,7 @@ logger = logging.getLogger(__name__)
 # Configurations
 PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT")
 DATABASE_ID = os.getenv("GOOGLE_CLOUD_FIRESTORE")
-MODEL_LOCATION = os.getenv("SUBAGENT_GOOGLE_CLOUD_LOCATION")
+MODEL_LOCATION = os.getenv("GOOGLE_CLOUD_LOCATION_GLOBAL")
 
 MIME_TYPE_MAPPING = {
     ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -76,7 +78,7 @@ def build_agent_cache(agent_name: str, gs_path: str, purpose: str, instructions:
     
     # Context Caching uses specific models (like gemini-3-flash-preview)
     cached_content = client.caches.create(
-        model=config.SUBAGENT_MODEL,
+        model=config.SUBAGENT_LITE_MODEL,
         config=types.CreateCachedContentConfig(
             contents=[document_part],
             system_instruction=full_system_instruction,

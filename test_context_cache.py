@@ -27,7 +27,7 @@ warnings.filterwarnings("ignore", category=UserWarning, module="pydantic")
 # Load environment variables first
 load_dotenv(override=True)
 
-MODEL_LOCATION = os.getenv("SUBAGENT_GOOGLE_CLOUD_LOCATION")
+MODEL_LOCATION = os.getenv("GOOGLE_CLOUD_LOCATION_GLOBAL")
 
 if __name__ == "__main__":
     # Test Parameters
@@ -58,7 +58,7 @@ if __name__ == "__main__":
     
     # Generate content using the cached context
     response = client.models.generate_content(
-        model=config.SUBAGENT_MODEL, # Must match the model the cache was created with
+        model=config.SUBAGENT_LITE_MODEL, # Must match the model the cache was created with
         contents=question,
         config=types.GenerateContentConfig(
             cached_content=active_cache_name, # This links the prompt to the pre-loaded cache!
