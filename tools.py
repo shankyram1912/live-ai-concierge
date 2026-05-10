@@ -113,13 +113,13 @@ class Tools:
                 try:
                     # Parse the YYYY-MM-DD string from the AI into a datetime object
                     parsed_date = datetime.strptime(delivery_date, "%Y-%m-%d")
-                    formatted_delivery_date = parsed_date.strftime("%d %b %Y")
+                    formatted_delivery_date = parsed_date.strftime("%d-%b-%Y")
                 except ValueError:
                     # Fallback just in case the AI sends non-standard text
                     formatted_delivery_date = delivery_date
             else:
                 # If it actually is a date object somehow, format it directly
-                formatted_delivery_date = delivery_date.strftime("%d %b %Y")            
+                formatted_delivery_date = delivery_date.strftime("%d-%b-%Y")            
             
             # Map the arguments directly into the specific schema structure
             order_data = {
@@ -203,35 +203,35 @@ class Tools:
 
 # ----------------------------------------------------------------------------
 # Test Execution Block
-# ----------------------------------------------------------------------------
-if __name__ == "__main__":
-    import json
+# # ----------------------------------------------------------------------------
+# if __name__ == "__main__":
+#     import json
     
-    print("\n--- Initializing Tools ---")
-    try:
-        tools = Tools()
+#     print("\n--- Initializing Tools ---")
+#     try:
+#         tools = Tools()
         
-        test_agent = "TINA"
-        test_contact = "+60123456789"
+#         test_agent = "TINA"
+#         test_contact = "+60123456789"
         
-        print("\n--- Testing: finalize_order ---")
-        order_result = tools.finalize_order(
-            agent_name=test_agent,
-            delivery_date=date(2026, 5, 12),
-            contact_number=test_contact,
-            delivery_address="123 Jalan Tun Razak, Kuala Lumpur",
-            full_order_details="2x Sourdough Loaf, 1x Box of Croissants. No allergies. Leave at guardhouse."
-        )
+#         print("\n--- Testing: finalize_order ---")
+#         order_result = tools.finalize_order(
+#             agent_name=test_agent,
+#             delivery_date=date(2026, 5, 12),
+#             contact_number=test_contact,
+#             delivery_address="123 Jalan Tun Razak, Kuala Lumpur",
+#             full_order_details="2x Sourdough Loaf, 1x Box of Croissants. No allergies. Leave at guardhouse."
+#         )
         
-        print(json.dumps(order_result, indent=2, default=str))
+#         print(json.dumps(order_result, indent=2, default=str))
         
-        print("\n--- Testing: retrieve_orders ---")
-        retrieved_results = tools.retrieve_orders(
-            agent_name=test_agent,
-            contact_number=test_contact
-        )
+#         print("\n--- Testing: retrieve_orders ---")
+#         retrieved_results = tools.retrieve_orders(
+#             agent_name=test_agent,
+#             contact_number=test_contact
+#         )
         
-        print(json.dumps(retrieved_results, indent=2, default=str))
+#         print(json.dumps(retrieved_results, indent=2, default=str))
 
-    except Exception as e:
-        print(f"\n❌ Test failed: {e}")
+#     except Exception as e:
+#         print(f"\n❌ Test failed: {e}")
