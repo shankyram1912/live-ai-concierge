@@ -1536,6 +1536,15 @@
             }
         };
 
+        // Global function exposed for app.js to trigger a table refresh
+        window.refreshOrdersTable = function() {
+            const agentSelect = document.getElementById('agent-select');
+            // Check if an agent is currently selected, then fetch their latest orders
+            if (agentSelect && agentSelect.value) {
+                loadOrdersForAgent(agentSelect.value);
+            }
+        };        
+
         // --- 6. TOOL USE LOG EXPORT ---
         const TOOL_LOG_CONFIG = {
             MAX_ENTRIES: 50,

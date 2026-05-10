@@ -308,6 +308,13 @@ async function connectWebsocket() {
                     if (logTools.includes(part.functionResponse.name)) {
                         window.logToolUse(part.functionResponse.name, false, part.functionResponse.response || {});
                     }
+
+                    // Refresh table when an order is finalized ---
+                    if (part.functionResponse.name === "finalize_order") {
+                        if (typeof window.refreshOrdersTable === 'function') {
+                            window.refreshOrdersTable();
+                        }
+                    }                    
                 }
             });
         }
