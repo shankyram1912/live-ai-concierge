@@ -102,7 +102,7 @@ def process_agent_knowledge(agent_name: str) -> str:
     
     try:
         response = client.models.generate_content(
-            model=config.SUBAGENT_PRO_MODEL,
+            model=config.SUBAGENT_LITE_MODEL,
             contents=[document_part, extraction_prompt],
             config=types.GenerateContentConfig(
                 temperature=0.1 # Lower temperature for more factual, verbatim extraction
