@@ -126,11 +126,12 @@ class Tools:
                 transaction, self.db, counter_ref, order_data
             )
             
-            # --- THE FIX ---
-            # Replace the Firestore Sentinel value with a real string so the AI Agent 
-            # and JSON serializers can safely parse it in the response.
             if 'created_at' in saved_document_dict:
-                saved_document_dict['created_at'] = datetime.now().isoformat()
+                # Define SGT as UTC+8
+                sgt_tz = timezone(timedelta(hours=8))
+                
+                # Get current time in SGT, strip microseconds, and format to ISO string
+                saved_document_dict['created_at'] = datetime.now(sgt_tz).replace(microsecond=0).isoformat()
             
             logger.info(f"[{agent_name}] Order successfully saved with ID: {saved_document_dict.get('order_id')}")
             return saved_document_dict
@@ -162,15 +163,20 @@ class Tools:
             )
             
             results = []
+            sgt_tz = timezone(timedelta(hours=8))
+            
             for doc in orders_query:
                 order_info = doc.to_dict()
                 
-            if 'created_at' in saved_document_dict:
-                # Define SGT as UTC+8
-                sgt_tz = timezone(timedelta(hours=8))
-                
-                # Get current time in SGT, strip microseconds, and format to ISO string
-                saved_document_dict['created_at'] = datetime.now(sgt_tz).replace(microsecond=0).isoformat()
+                # Format timestamps for JSON serialization in SGT without microseconds
+                if 'created_at' in order_info and order_info['created_at']:
+                    # Convert Firestore's UTC datetime to SGT, strip microseconds, and format
+                    order_info['created_at'] = (
+                        order_info['created_at']
+                        .astimezone(sgt_tz)
+                        .replace(microsecond=0)
+                        .isoformat()
+                    )
                     
                 results.append(order_info)
                 
