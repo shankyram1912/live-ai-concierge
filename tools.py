@@ -108,13 +108,26 @@ class Tools:
 
             counter_ref = self.db.collection(SYSTEM_METADATA_COLLECTION).document(ORDER_COUNTER_DOCUMENT)
             
+            # 1. Safely parse and format the delivery_date from the AI string
+            if isinstance(delivery_date, str):
+                try:
+                    # Parse the YYYY-MM-DD string from the AI into a datetime object
+                    parsed_date = datetime.strptime(delivery_date, "%Y-%m-%d")
+                    formatted_delivery_date = parsed_date.strftime("%d %b %Y")
+                except ValueError:
+                    # Fallback just in case the AI sends non-standard text
+                    formatted_delivery_date = delivery_date
+            else:
+                # If it actually is a date object somehow, format it directly
+                formatted_delivery_date = delivery_date.strftime("%d %b %Y")            
+            
             # Map the arguments directly into the specific schema structure
             order_data = {
                 "contact_number": contact_number,
                 "created_at": firestore.SERVER_TIMESTAMP,
                 "order_details": {
                     "agent_name": agent_name,
-                    "delivery_date": delivery_date.strftime("%d %b %Y"), 
+                    "delivery_date": formatted_delivery_date, 
                     "delivery_address": delivery_address,
                     "full_order_details": full_order_details
                 }
