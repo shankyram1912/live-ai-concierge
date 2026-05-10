@@ -69,7 +69,7 @@ def ask_agent_with_cache(agent_name: str, question: str) -> str:
 if __name__ == "__main__":
     # Test Parameters
     test_agent = "FARAH"
-    test_question = "What is the policy on dietary restrictions according to the guide?"
+    test_question = "Extract all of the information in the document into a markdown file preserving all sections and information as is with strictly zero information loss"
     
     print("="*60)
     print(f"Testing Agent: {test_agent}")
