@@ -10,13 +10,14 @@ from google.cloud import firestore
 from google import genai
 from google.genai import types
 import config
+from dotenv import load_dotenv
 
 logger = logging.getLogger(__name__)
 
 # Configurations
-PROJECT_ID = "genai-e2e-demos"
-LOCATION = "us-central1" # Ensure this matches your Vertex AI region
-DATABASE_ID = "live-concierge-ai"
+PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT")
+LOCATION = os.getenv("GOOGLE_CLOUD_LOCATION")
+DATABASE_ID = os.getenv("GOOGLE_CLOUD_FIRESTORE")
 
 MIME_TYPE_MAPPING = {
     ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
