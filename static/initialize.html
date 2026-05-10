@@ -1586,9 +1586,12 @@
         });
 
         // ── Fetch All Flow ────────────────────────────────────────────────────────
-        async function fetchAllAgents() {
+        async function fetchAllAgents(silent = false) {
             lockBtns();
-            showStatus("Fetching agents from Firestore...", "info");
+            // Only show fetching status if we aren't trying to preserve an error message
+            if (!silent) {
+                showStatus("Fetching agents from Firestore...", "info");
+            }
             tableContainer.innerHTML = `
             <div class="empty-state">
                 <span class="spinner" style="margin-bottom:12px; width:24px; height:24px; color:var(--apple-blue);"></span>
@@ -1604,7 +1607,11 @@
                     allAgentsData.push({ id: docSnap.id, data: docSnap.data() });
                 });
 
-                showStatus(`Retrieved ${allAgentsData.length} agents.`, "success");
+                // Only show success status if we aren't trying to preserve an error message
+                if (!silent) {
+                    showStatus(`Retrieved ${allAgentsData.length} agents.`, "success");
+                }
+
                 renderTable();
             } catch (error) {
                 console.error(error);
@@ -1690,11 +1697,11 @@
             showStatus(`Creating Agent '${name}' and uploading file...`, "info");
 
             tableContainer.innerHTML = `
-    <div class="empty-state">
-    <span class="spinner" style="margin-bottom:12px; width:24px; height:24px; color:var(--apple-green);"></span>
-    <div>Saving Agent to Firestore...</div>
-    </div>
-    `;
+                <div class="empty-state">
+                <span class="spinner" style="margin-bottom:12px; width:24px; height:24px; color:var(--apple-green);"></span>
+                <div>Saving Agent to Firestore...</div>
+                </div>
+            `;
             paginationBar.style.display = 'none';
 
             try {
@@ -1710,7 +1717,8 @@
                     agentName: name,
                     purpose: purpose,
                     customerHandlingInstructions: instructions,
-                    knowledgeFilePath: gsPath
+                    knowledgeFilePath: gsPath,
+                    isKnowledgeBaseReady: false
                 };
 
                 await setDoc(doc(db, "ai-agents", name), agentData);
@@ -1739,8 +1747,8 @@
                 await fetchAllAgents(); // Auto refresh
             } catch (error) {
                 console.error(error);
-                showStatus(`Agent flow error: ${error.message}`, "error");
-                await fetchAllAgents(); // recover view
+                showStatus(`Extraction Failed: ${error.message}`, "error");
+                await fetchAllAgents(true);
             } finally {
                 unlockBtns();
             }
@@ -1795,10 +1803,10 @@
             showStatus(`Updating Agent '${name}'...`, "info");
 
             tableContainer.innerHTML = `
-            <div class="empty-state">
-            <span class="spinner" style="margin-bottom:12px; width:24px; height:24px; color:var(--apple-blue);"></span>
-            <div>Updating Agent data...</div>
-            </div>
+                <div class="empty-state">
+                <span class="spinner" style="margin-bottom:12px; width:24px; height:24px; color:var(--apple-blue);"></span>
+                <div>Updating Agent data...</div>
+                </div>
             `;
             paginationBar.style.display = 'none';
 
@@ -1857,8 +1865,8 @@
                 await fetchAllAgents(); // Auto refresh
             } catch (error) {
                 console.error(error);
-                showStatus(`Agent flow error: ${error.message}`, "error");
-                await fetchAllAgents(); // Recover view
+                showStatus(`Extraction Failed: ${error.message}`, "error");
+                await fetchAllAgents(true);
             } finally {
                 unlockBtns();
             }

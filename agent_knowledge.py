@@ -118,7 +118,7 @@ def process_agent_knowledge(agent_name: str) -> str:
 
     # 4. Save the Result to Firestore
     try:
-        doc_ref.update({"knowledgeBase": markdown_content})
+        doc_ref.update({"knowledgeBase": markdown_content, "isKnowledgeBaseReady": True})
         logger.info(f"[{agent_name}] Successfully updated database with 'knowledgeBase'.")
     except Exception as e:
         logger.error(f"[{agent_name}] Failed to save 'knowledgeBase' to Firestore: {e}")
