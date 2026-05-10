@@ -29,15 +29,17 @@ load_dotenv(override=True)
 
 MODEL_LOCATION = os.getenv("SUBAGENT_GOOGLE_CLOUD_LOCATION")
 
-def get_genai_client():
-    """Initializes the Google GenAI client natively for Vertex AI."""
-    return genai.Client(location=MODEL_LOCATION)
-
-def ask_agent_with_cache(agent_name: str, question: str) -> str:
-    """
-    Finds the active cache for the agent and generates a response.
-    """
-    client = get_genai_client()
+if __name__ == "__main__":
+    # Test Parameters
+    test_agent = "FARAH"
+    test_question = "Extract all of the information in the document into a markdown file preserving all sections and information as is with strictly zero information loss"
+    
+    print("="*60)
+    print(f"Testing Agent: {test_agent}")
+    print(f"Question: '{test_question}'")
+    print("="*60)
+    
+    client = genai.Client(location=MODEL_LOCATION)
     
     logger.info(f"[{agent_name}] Looking for active context cache...")
             
@@ -65,21 +67,3 @@ def ask_agent_with_cache(agent_name: str, question: str) -> str:
     )
     
     return response.text
-
-if __name__ == "__main__":
-    # Test Parameters
-    test_agent = "FARAH"
-    test_question = "Extract all of the information in the document into a markdown file preserving all sections and information as is with strictly zero information loss"
-    
-    print("="*60)
-    print(f"Testing Agent: {test_agent}")
-    print(f"Question: '{test_question}'")
-    print("="*60)
-    
-    try:
-        answer = ask_agent_with_cache(test_agent, test_question)
-        print("\n🤖 AGENT RESPONSE:\n")
-        print(answer)
-        print("\n" + "="*60)
-    except Exception as e:
-        logger.error(f"Test Failed: {str(e)}")
