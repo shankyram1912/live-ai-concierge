@@ -12,6 +12,7 @@ from dotenv import load_dotenv
 import config
 import warnings
 import os
+import manage_context_cache
 
 # Configure logging
 logging.basicConfig(
@@ -55,7 +56,8 @@ def ask_agent_with_cache(agent_name: str, question: str) -> str:
             break
             
     if not active_cache_name:
-        raise ValueError(f"No active context cache found for agent '{agent_name}'. Please run create_agent_cache() first.")
+        logger.info(f"No active context cache found for agent '{agent_name}'. Please run create_agent_cache() first.")
+        manage_context_cache.create_agent_cache(agent_name)
         
     logger.info(f"[{agent_name}] Querying Gemini using Context Cache...")
     
