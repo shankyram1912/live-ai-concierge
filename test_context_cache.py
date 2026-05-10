@@ -31,11 +31,11 @@ MODEL_LOCATION = os.getenv("GOOGLE_CLOUD_LOCATION_GLOBAL")
 
 if __name__ == "__main__":
     # Test Parameters
-    test_agent = "FARAH"
+    agent_name = "FARAH"
     test_question = "Extract all of the information in the document into a markdown file preserving all sections and information as is with strictly zero information loss"
     
     print("="*60)
-    print(f"Testing Agent: {test_agent}")
+    print(f"Testing Agent: {agent_name}")
     print(f"Question: '{test_question}'")
     print("="*60)
     
@@ -59,7 +59,7 @@ if __name__ == "__main__":
     # Generate content using the cached context
     response = client.models.generate_content(
         model=config.SUBAGENT_LITE_MODEL, # Must match the model the cache was created with
-        contents=question,
+        contents=test_question,
         config=types.GenerateContentConfig(
             cached_content=active_cache_name, # This links the prompt to the pre-loaded cache!
             temperature=0.2 # Lower temperature for more factual responses
