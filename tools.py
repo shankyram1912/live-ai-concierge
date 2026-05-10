@@ -3,6 +3,7 @@ import logging
 from datetime import date, datetime
 from google.cloud import firestore
 from dotenv import load_dotenv
+from datetime import date, datetime, timezone, timedelta
 
 # ==========================================
 # Module-Level Setup
@@ -164,9 +165,12 @@ class Tools:
             for doc in orders_query:
                 order_info = doc.to_dict()
                 
-                # Format timestamps for JSON serialization
-                if 'created_at' in order_info and order_info['created_at']:
-                    order_info['created_at'] = order_info['created_at'].isoformat()
+            if 'created_at' in saved_document_dict:
+                # Define SGT as UTC+8
+                sgt_tz = timezone(timedelta(hours=8))
+                
+                # Get current time in SGT, strip microseconds, and format to ISO string
+                saved_document_dict['created_at'] = datetime.now(sgt_tz).replace(microsecond=0).isoformat()
                     
                 results.append(order_info)
                 
