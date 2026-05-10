@@ -27,6 +27,7 @@ from google.genai import types
 from google.genai.types import ProactivityConfig
 
 from agents import concierge_agent
+import agent_knowledge
 
 # Configure logging
 logging.basicConfig(
