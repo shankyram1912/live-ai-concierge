@@ -189,8 +189,8 @@ if __name__ == "__main__":
     try:
         tools = Tools()
         
-        test_agent = "bakery_agent"
-        test_contact = "+60123456789"
+        test_agent = "TINA"
+        test_contact = "0123456789"
         
         print("\n--- Testing: finalize_order ---")
         order_result = tools.finalize_order(
