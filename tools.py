@@ -1,12 +1,6 @@
 import os
-import time
-import yaml
-import json
 import logging
-import threading
-import asyncio
-from enum import Enum
-from typing import Literal
+from datetime import date
 from google.cloud import firestore
 from dotenv import load_dotenv
 
@@ -19,427 +13,203 @@ logger = logging.getLogger(__name__)
 
 load_dotenv(override=True)
 
-# Define the Enum for device states
-class DeviceState(str, Enum):
-    ON = "on"
-    OFF = "off"
+# ----------------------------------------------------------------------------
+# Database Path Constants
+# ----------------------------------------------------------------------------
+ORDERS_COLLECTION = "orders"
+DIRECTORY_DOCUMENT = "directory"
+SYSTEM_METADATA_COLLECTION = os.getenv("FIRESTORE_SYSTEM_METADATA", "system_metadata")
+ORDER_COUNTER_DOCUMENT = os.getenv("FIRESTORE_ORDER_COUNTER", "order_counter")
 
+
+# ----------------------------------------------------------------------------
+# Transaction Helper (Must be outside the class for Firestore to use it)
+# ----------------------------------------------------------------------------
+@firestore.transactional
+def _execute_order_transaction(transaction, db, counter_ref, agent_name, order_data):
+    """
+    Runs the atomic transaction to safely increment the counter and save the order.
+    Returns the finalized document dictionary.
+    """
+    # 1. Read the current counter
+    counter_snapshot = counter_ref.get(transaction=transaction)
+    
+    if counter_snapshot.exists:
+        current_number = counter_snapshot.get('current_order_number')
+    else:
+        current_number = 1000 
+        
+    # 2. Increment the number (Pure Integer)
+    new_order_number = current_number + 1
+    
+    # 3. Update the counter document
+    transaction.set(counter_ref, {'current_order_number': new_order_number}, merge=True)
+    
+    # 4. Inject the purely numeric order_id inside the document
+    order_data['order_id'] = new_order_number
+    
+    # 5. Define the path using the module constants
+    order_ref = (
+        db.collection(ORDERS_COLLECTION)
+        .document(DIRECTORY_DOCUMENT)
+        .collection(agent_name)
+        .document(str(new_order_number))
+    )
+    
+    # 6. Save the document to Firestore
+    transaction.set(order_ref, order_data)
+    
+    # 7. Return the full document dictionary
+    return order_data
+
+
+# ----------------------------------------------------------------------------
+# Tools Class Definition
+# ----------------------------------------------------------------------------
 class Tools:
     def __init__(self):
-        """Initializes the Firestore connection and class state.""" 
-        self._action_cache = {}
-        self._lock = threading.Lock()
-        
+        """Initializes the Firestore connection with graceful degradation.""" 
         project_id = os.getenv("GOOGLE_CLOUD_PROJECT")
         db_id = os.getenv("GOOGLE_CLOUD_FIRESTORE")
         
+        self.db = None
+        
         if not project_id:
             logger.error("⚠️ GOOGLE_CLOUD_PROJECT is missing from the environment!")
-            raise ValueError("⚠️ GOOGLE_CLOUD_PROJECT is missing from the environment!")
-        if not db_id:
+        elif not db_id:
             logger.error("⚠️ GOOGLE_CLOUD_FIRESTORE is missing from the environment!")
-            raise ValueError("⚠️ GOOGLE_CLOUD_FIRESTORE is missing from the environment!")
-            
-        logger.info(f"Connecting to Firestore instance: {db_id} in project {project_id}")
+        else:
+            logger.info(f"Connecting to Firestore instance: {db_id} in project {project_id}")
+            try:
+                self.db = firestore.Client(
+                    project=project_id, 
+                    database=db_id
+                )
+                logger.info(f"✅ Connected to Firestore instance: {db_id} in project {project_id}")
+                
+            except Exception as e:
+                logger.error(f"⚠️ Failed to connect to Firestore: {e}")
+                # We log the error but allow the object to instantiate. 
+                # Tools will cleanly return error JSONs to the AI agent if self.db is None.
 
+
+    def finalize_order(
+        self, 
+        agent_name: str, 
+        delivery_date: date, 
+        contact_number: str, 
+        delivery_address: str, 
+        full_order_details: str
+    ):
+        """
+        Saves the finalized order into the Firestore database using a sequential running number.
+        Constructs the strict root schema and maps specific parameters into 'order_details'.
+        """
+        logger.info(f"[{agent_name}] Finalizing order for contact: {contact_number}")
+        
         try:
-            self.db = firestore.Client(
-                project=project_id, 
-                database=db_id
+            if not getattr(self, 'db', None):
+                return {"error": "Database connection not initialized. Cannot process order."}
+
+            counter_ref = self.db.collection(SYSTEM_METADATA_COLLECTION).document(ORDER_COUNTER_DOCUMENT)
+            
+            # Map the arguments directly into the specific schema structure
+            order_data = {
+                "agent_name": agent_name,
+                "contact_number": contact_number,
+                "created_at": firestore.SERVER_TIMESTAMP,
+                "order_details": {
+                    "delivery_date": str(delivery_date), 
+                    "delivery_address": delivery_address,
+                    "full_order_details": full_order_details
+                }
+            }
+            
+            # Execute the transaction
+            transaction = self.db.transaction()
+            saved_document_dict = _execute_order_transaction(
+                transaction, self.db, counter_ref, agent_name, order_data
             )
-            logger.info(f"✅ Connected to Firestore instance: {db_id} in project {project_id}")
+            
+            logger.info(f"[{agent_name}] Order successfully saved with ID: {saved_document_dict.get('order_id')}")
+            return saved_document_dict
             
         except Exception as e:
-            self.db = None
-            logger.error(f"⚠️ Failed to connect to Firestore: {e}")
-            raise ValueError(f"⚠️ GOOGLE_CLOUD_FIRESTORE Failed to connect to Firestore: {e}")
-
-    def get_smart_home_devices_info(self) -> str:
-        """Fetches the live smart home devices"""
-        if not self.db:
-            logger.error("⚠️ Unable to retrieve smart home devices status, database connection not initialized!")
-            return {"Information": "Unable to retrieve smart home devices status"}
-
-        try:
-            doc_ref = self.db.collection("home-users").document("default")
-            doc = doc_ref.get()
-
-            if not doc.exists:
-                return "home_devices: []"
-
-            devices_map = doc.to_dict().get("devices", {})
-            smart_device_list = []
-
-            for device_id, data in devices_map.items():
-                
-                current_state = data.get("state", "off")
-                
-                smart_device_list.append({
-                    "id": data.get("id", device_id),
-                    "deviceLabel": data.get("deviceLabel", "Unknown"),
-                    "room": data.get("room", "Unknown"),
-                    "state": data.get("state", "off"),
-                    "currentSettingValue": "" if current_state == "off" else data.get("currentSettingValue", ""),
-                    "defaultSettingValue": data.get("defaultSettingValue", "")
-                })
-            
-            smart_device_list_yaml = yaml.dump(smart_device_list)
-            
-            # Log tool calls
-            print("\n" + "="*50)
-            print(f"🔧 TOOL EXECUTION] get_smart_home_devices_info \n {smart_device_list_yaml}")
-            print("="*50 + "\n", flush=True)            
-            logger.debug(f"Smart home devices YAML - \n {smart_device_list_yaml}")
-            return smart_device_list_yaml
-
-        except Exception as e:
-            logger.error(f"Smart home devices read failed: {str(e)}")
-            return {"error": "Failed to fetch smart device topology."}
-
-    def control_airconditioner(self, id: str, newState: bool, newSettingValue: str = None, defaultSettingValue: str = None) -> str:
-        """
-        SILENT EXECUTION. Controls an Air Conditioner unit in the smart home.
-
-        Args:
-            id: The exact ID of the AC unit (mandatory).
-            newState: The desired state as a boolean, True for ON, False for OFF (mandatory).
-            newSettingValue: The target temperature as a string (optional).
-            defaultSettingValue: The default temperature as a string (optional).
-        """
-        if not self.db:
-            return {"error": "Database connection not initialized."}
-
-        # Evaluate the boolean against the Enum
-        target_state_str = DeviceState.ON.value if newState else DeviceState.OFF.value
-
-        # Log tool calls
-        print("\n" + "="*50)
-        print(f"[🔧 TOOL EXECUTION] control_airconditioner(id={id}, newState={newState} -> '{target_state_str}', newSettingValue={newSettingValue})")
-        print("="*50 + "\n", flush=True)   
-        logger.info(f"[🔧 TOOL EXECUTION] control_airconditioner(id={id}, newState={newState} -> '{target_state_str}', newSettingValue={newSettingValue})")
-
-        # Cache check using the instance dictionary
-        cache_key = f"{id}_{target_state_str}_{newSettingValue}"
-        current_time = time.time()
-        
-        # with self._lock: 
-        #     if cache_key in self._action_cache and (current_time - self._action_cache[cache_key]) < 5:
-        #         return {"status": "IGNORED_DUPLICATE_CALL"}
-        #     self._action_cache[cache_key] = current_time
-
-        try:
-            doc_ref = self.db.collection("home-users").document("default")
-            doc = doc_ref.get()
-            
-            if not doc.exists:
-                return {"error": "User document not found."}
-                
-            devices = doc.to_dict().get("devices", {})
-
-            if id not in devices:
-                return {"error": f"Device {id} not found."}
-
-            device = devices[id]
-            oldState = device.get("state", "unknown")
-            oldSettingValue = device.get("currentSettingValue", "unknown")
-            
-            # Use defaultSettingValue from DB if newSettingValue is None and defaultSettingValue is None
-            if newSettingValue is not None:
-                finalSettingValue = newSettingValue
-            else:
-                if(defaultSettingValue is not None):
-                    finalSettingValue = defaultSettingValue
-                else:
-                    finalSettingValue = device.get("defaultSettingValue", oldSettingValue) 
-
-            # Update Firestore
-            if(defaultSettingValue is None):
-                doc_ref.update({
-                    f"devices.{id}.state": target_state_str,
-                    f"devices.{id}.currentSettingValue": finalSettingValue
-                })
-            else:
-                doc_ref.update({
-                    f"devices.{id}.state": target_state_str,
-                    f"devices.{id}.currentSettingValue": finalSettingValue,
-                    f"devices.{id}.defaultSettingValue": defaultSettingValue
-                })                                
-
-            response_dict = {
-                "id": id,
-                "deviceLabel": device.get("deviceLabel"),
-                "room": device.get("room"),
-                "oldState": oldState,
-                "newState": target_state_str,
-                "oldSettingValue": oldSettingValue,
-                "currentSettingValue": finalSettingValue
-            }
-            return response_dict
-            
-        except Exception as e:
-            logger.error(f"Failed to update AC {id}: {str(e)}")
+            logger.error(f"[{agent_name}] Failed to finalize order: {e}")
             return {"error": f"Database update failed: {str(e)}"}
-        
-    def control_camera(
-        self, id: str, 
-        newState: bool, 
-        newSettingValue: Literal["Online", "Private", "Protect"] = None,
-        defaultSettingValue: Literal["Online", "Private", "Protect"] = None) -> str:
+
+
+    def retrieve_orders(self, agent_name: str, contact_number: str):
         """
-        SILENT EXECUTION. Controls an Smart Camera in the smart home.
-
-        Args:
-            id: The exact ID of the Smart camera unit (mandatory).
-            newState: The desired state as a boolean, True for ON, False for OFF (mandatory).
-            newSettingValue: The camera's security mode as a string. Must be exactly "Online", "Private", or "Protect" (optional).
-            defaultSettingValue: The camera's default security mode as a string. Must be exactly "Online", "Private", or "Protect" (optional).
+        Retrieves all orders associated with a specific contact number for a specific agent.
+        Orders results by order_id descending and caps the query to 50 results to prevent memory bloat.
         """
-        if not self.db:
-            return {"error": "Database connection not initialized."}
-
-        # Evaluate the boolean against the Enum
-        target_state_str = DeviceState.ON.value if newState else DeviceState.OFF.value
-
-        # Log tool calls
-        print("\n" + "="*50)
-        print(f"[🔧 TOOL EXECUTION] control_camera(id={id}, newState={newState} -> '{target_state_str}', newSettingValue={newSettingValue})")
-        print("="*50 + "\n", flush=True)   
-        logger.info(f"[🔧 TOOL EXECUTION] control_camera(id={id}, newState={newState} -> '{target_state_str}', newSettingValue={newSettingValue})")
-
-        # Cache check using the instance dictionary
-        cache_key = f"{id}_{target_state_str}_{newSettingValue}"
-        current_time = time.time()
+        logger.info(f"Retrieving orders for contact: {contact_number} under agent: {agent_name}")
         
-        # with self._lock: 
-        #     if cache_key in self._action_cache and (current_time - self._action_cache[cache_key]) < 5:
-        #         return {"status": "IGNORED_DUPLICATE_CALL"}
-        #     self._action_cache[cache_key] = current_time
-
         try:
-            doc_ref = self.db.collection("home-users").document("default")
-            doc = doc_ref.get()
+            if not getattr(self, 'db', None):
+                return {"error": "Database connection not initialized. Cannot retrieve orders."}
             
-            if not doc.exists:
-                return {"error": "User document not found."}
+            # Look directly in the agent's specific collection, filtered, ordered, and limited
+            orders_query = (
+                self.db.collection(ORDERS_COLLECTION)
+                .document(DIRECTORY_DOCUMENT)
+                .collection(agent_name)
+                .where('contact_number', '==', contact_number)
+                .order_by('order_id', direction=firestore.Query.DESCENDING)
+                .limit(50)
+                .stream()
+            )
+            
+            results = []
+            for doc in orders_query:
+                order_info = doc.to_dict()
                 
-            devices = doc.to_dict().get("devices", {})
-
-            if id not in devices:
-                return {"error": f"Device {id} not found."}
-
-            device = devices[id]
-            oldState = device.get("state", "unknown")
-            oldSettingValue = device.get("currentSettingValue", "unknown")
-            
-            # Use defaultSettingValue from DB if newSettingValue is None and defaultSettingValue is None
-            if newSettingValue is not None:
-                finalSettingValue = newSettingValue
-            else:
-                if(defaultSettingValue is not None):
-                    finalSettingValue = defaultSettingValue
-                else:
-                    finalSettingValue = device.get("defaultSettingValue", oldSettingValue) 
-
-            # Update Firestore
-            if(defaultSettingValue is None):
-                doc_ref.update({
-                    f"devices.{id}.state": target_state_str,
-                    f"devices.{id}.currentSettingValue": finalSettingValue
-                })
-            else:
-                doc_ref.update({
-                    f"devices.{id}.state": target_state_str,
-                    f"devices.{id}.currentSettingValue": finalSettingValue,
-                    f"devices.{id}.defaultSettingValue": defaultSettingValue
-                })                                
-
-            response_dict = {
-                "id": id,
-                "deviceLabel": device.get("deviceLabel"),
-                "room": device.get("room"),
-                "oldState": oldState,
-                "newState": target_state_str,
-                "oldSettingValue": oldSettingValue,
-                "currentSettingValue": finalSettingValue
-            }
-            return response_dict
+                # Format timestamps for JSON serialization
+                if 'created_at' in order_info and order_info['created_at']:
+                    order_info['created_at'] = order_info['created_at'].isoformat()
+                    
+                results.append(order_info)
+                
+            logger.info(f"Successfully retrieved {len(results)} order(s) for {contact_number}.")
+            return results
             
         except Exception as e:
-            logger.error(f"Failed to update camera {id}: {str(e)}")
-            return {"error": f"Database update failed: {str(e)}"}
+            logger.error(f"Failed to retrieve orders for {contact_number}: {e}")
+            return {"error": f"Query failed: {str(e)}"}
+
+
+# ----------------------------------------------------------------------------
+# Test Execution Block
+# ----------------------------------------------------------------------------
+if __name__ == "__main__":
+    import json
+    
+    print("\n--- Initializing Tools ---")
+    try:
+        tools = Tools()
         
-    def control_light(
-        self, id: str, 
-        newState: bool, 
-        newSettingValue: Literal["Cool", "Movie", "Bright"] = None,
-        defaultSettingValue: Literal["Cool", "Movie", "Bright"] = None) -> str:
-        """
-        SILENT EXECUTION. Controls an Smart Lights in the smart home.
-
-        Args:
-            id: The exact ID of the Smart Light unit (mandatory).
-            newState: The desired state as a boolean, True for ON, False for OFF (mandatory).
-            newSettingValue: The lighting mode as a string. Must be exactly "Cool", "Movie", or "Bright" (optional).
-            defaultSettingValue: The lighting default mode as a string. Must be exactly "Cool", "Movie", or "Bright" (optional).
-        """
-        if not self.db:
-            return {"error": "Database connection not initialized."}
-
-        # Evaluate the boolean against the Enum
-        target_state_str = DeviceState.ON.value if newState else DeviceState.OFF.value
-
-        # Log tool calls
-        print("\n" + "="*50)
-        print(f"[🔧 TOOL EXECUTION] control_light(id={id}, newState={newState} -> '{target_state_str}', newSettingValue={newSettingValue})")
-        print("="*50 + "\n", flush=True)   
-        logger.info(f"[🔧 TOOL EXECUTION] control_light(id={id}, newState={newState} -> '{target_state_str}', newSettingValue={newSettingValue})")
-
-        # Cache check using the instance dictionary
-        cache_key = f"{id}_{target_state_str}_{newSettingValue}"
-        current_time = time.time()
+        test_agent = "bakery_agent"
+        test_contact = "+60123456789"
         
-        # with self._lock: 
-        #     if cache_key in self._action_cache and (current_time - self._action_cache[cache_key]) < 5:
-        #         return {"status": "IGNORED_DUPLICATE_CALL"}
-        #     self._action_cache[cache_key] = current_time
-
-        try:
-            doc_ref = self.db.collection("home-users").document("default")
-            doc = doc_ref.get()
-            
-            if not doc.exists:
-                return {"error": "User document not found."}
-                
-            devices = doc.to_dict().get("devices", {})
-
-            if id not in devices:
-                return {"error": f"Device {id} not found."}
-
-            device = devices[id]
-            oldState = device.get("state", "unknown")
-            oldSettingValue = device.get("currentSettingValue", "unknown")
-            
-            # Use defaultSettingValue from DB if newSettingValue is None and defaultSettingValue is None
-            if newSettingValue is not None:
-                finalSettingValue = newSettingValue
-            else:
-                if(defaultSettingValue is not None):
-                    finalSettingValue = defaultSettingValue
-                else:
-                    finalSettingValue = device.get("defaultSettingValue", oldSettingValue) 
-
-            # Update Firestore
-            if(defaultSettingValue is None):
-                doc_ref.update({
-                    f"devices.{id}.state": target_state_str,
-                    f"devices.{id}.currentSettingValue": finalSettingValue
-                })
-            else:
-                doc_ref.update({
-                    f"devices.{id}.state": target_state_str,
-                    f"devices.{id}.currentSettingValue": finalSettingValue,
-                    f"devices.{id}.defaultSettingValue": defaultSettingValue
-                })                                
-
-            response_dict = {
-                "id": id,
-                "deviceLabel": device.get("deviceLabel"),
-                "room": device.get("room"),
-                "oldState": oldState,
-                "newState": target_state_str,
-                "oldSettingValue": oldSettingValue,
-                "currentSettingValue": finalSettingValue
-            }
-            return response_dict
-            
-        except Exception as e:
-            logger.error(f"Failed to update light {id}: {str(e)}")
-            return {"error": f"Database update failed: {str(e)}"}        
+        print("\n--- Testing: finalize_order ---")
+        order_result = tools.finalize_order(
+            agent_name=test_agent,
+            delivery_date=date(2026, 5, 12),
+            contact_number=test_contact,
+            delivery_address="123 Jalan Tun Razak, Kuala Lumpur",
+            full_order_details="2x Sourdough Loaf, 1x Box of Croissants. No allergies. Leave at guardhouse."
+        )
         
-    def control_lock(
-        self, id: str, 
-        newState: bool, 
-        newSettingValue: Literal["Guest", "Party", "DND"] = None,
-        defaultSettingValue: Literal["Guest", "Party", "DND"] = None) -> str:
-        """
-        SILENT EXECUTION. Controls an Smart Lock in the smart home.
-
-        Args:
-            id: The exact ID of the Smart Lock unit (mandatory).
-            newState: The desired state as a boolean, True for ON, False for OFF (mandatory).
-            newSettingValue: The locking mode as a string. Must be exactly "Guest", "Party", or "DND" (optional).
-            defaultSettingValue: The locking default mode as a string. Must be exactly "Guest", "Party", or "DND" (optional).
-        """
-        if not self.db:
-            return {"error": "Database connection not initialized."}
-
-        # Evaluate the boolean against the Enum
-        target_state_str = DeviceState.ON.value if newState else DeviceState.OFF.value
-
-        # Log tool calls
-        print("\n" + "="*50)
-        print(f"[🔧 TOOL EXECUTION] control_lock(id={id}, newState={newState} -> '{target_state_str}', newSettingValue={newSettingValue})")
-        print("="*50 + "\n", flush=True)   
-        logger.info(f"[🔧 TOOL EXECUTION] control_lock(id={id}, newState={newState} -> '{target_state_str}', newSettingValue={newSettingValue})")
-
-        # Cache check using the instance dictionary
-        cache_key = f"{id}_{target_state_str}_{newSettingValue}"
-        current_time = time.time()
+        print(json.dumps(order_result, indent=2, default=str))
         
-        # with self._lock: 
-        #     if cache_key in self._action_cache and (current_time - self._action_cache[cache_key]) < 5:
-        #         return {"status": "IGNORED_DUPLICATE_CALL"}
-        #     self._action_cache[cache_key] = current_time
+        print("\n--- Testing: retrieve_orders ---")
+        retrieved_results = tools.retrieve_orders(
+            agent_name=test_agent,
+            contact_number=test_contact
+        )
+        
+        print(json.dumps(retrieved_results, indent=2, default=str))
 
-        try:
-            doc_ref = self.db.collection("home-users").document("default")
-            doc = doc_ref.get()
-            
-            if not doc.exists:
-                return {"error": "User document not found."}
-                
-            devices = doc.to_dict().get("devices", {})
-
-            if id not in devices:
-                return {"error": f"Device {id} not found."}
-
-            device = devices[id]
-            oldState = device.get("state", "unknown")
-            oldSettingValue = device.get("currentSettingValue", "unknown")
-            
-            # Use defaultSettingValue from DB if newSettingValue is None and defaultSettingValue is None
-            if newSettingValue is not None:
-                finalSettingValue = newSettingValue
-            else:
-                if(defaultSettingValue is not None):
-                    finalSettingValue = defaultSettingValue
-                else:
-                    finalSettingValue = device.get("defaultSettingValue", oldSettingValue) 
-
-            # Update Firestore
-            if(defaultSettingValue is None):
-                doc_ref.update({
-                    f"devices.{id}.state": target_state_str,
-                    f"devices.{id}.currentSettingValue": finalSettingValue
-                })
-            else:
-                doc_ref.update({
-                    f"devices.{id}.state": target_state_str,
-                    f"devices.{id}.currentSettingValue": finalSettingValue,
-                    f"devices.{id}.defaultSettingValue": defaultSettingValue
-                })                                
-
-            response_dict = {
-                "id": id,
-                "deviceLabel": device.get("deviceLabel"),
-                "room": device.get("room"),
-                "oldState": oldState,
-                "newState": target_state_str,
-                "oldSettingValue": oldSettingValue,
-                "currentSettingValue": finalSettingValue
-            }
-            return response_dict
-            
-        except Exception as e:
-            logger.error(f"Failed to update lock {id}: {str(e)}")
-            return {"error": f"Database update failed: {str(e)}"}
+    except Exception as e:
+        print(f"\n❌ Test failed: {e}")
