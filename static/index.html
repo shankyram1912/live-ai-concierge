@@ -4,10 +4,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aris Smart Home AI</title>
+    <title>Concierge AI</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <!-- Link to the separated ADK App Logic -->
-    <script src="/live-smarthome-agent/static/js/app.js" type="module"></script>
+    <script src="/live-ai-concierge/static/js/app.js" type="module"></script>
     <style>
         /* --- PREMIUM DESIGN SYSTEM --- */
         :root {
@@ -27,7 +27,7 @@
 
             --apple-blue: #0A84FF;
             --apple-blue-glow: rgba(10, 132, 255, 0.3);
-            --apple-blue-bg: rgba(10, 132, 255, 0.15);
+            --apple-blue-bg: rgba(10, 132, 255, 0.15);            
 
             --glass-blur: blur(60px);
             --font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -183,14 +183,13 @@
             flex-direction: column;
             flex-grow: 1;
             min-height: 0;
-            /* Removed the 12px margin-top to pull the line up closer to Proactive Audio */
             margin-top: 0px; 
             border-top: 1px solid rgba(255, 255, 255, 0.06);
             padding-top: 16px;
         }
 
         .tool-log-header {
-            font-size: 14px; /* Increased to match Proactive Audio (14px) */
+            font-size: 14px; 
             font-weight: 600;
             color: var(--text-secondary);
             margin-bottom: 12px;
@@ -204,7 +203,7 @@
             border: none;
             border-radius: 8px;
             color: var(--text-tertiary);
-            font-size: 10px; /* Increased for better readability alongside the 14px header */
+            font-size: 10px; 
             font-weight: 700;
             padding: 4px 8px;
             cursor: pointer;
@@ -233,7 +232,7 @@
             gap: 4px;
             padding: 6px 8px; 
             border-radius: 8px;
-            font-size: 11px; /* Base font increased */
+            font-size: 11px; 
             font-family: var(--font-family);
             background: rgba(255, 255, 255, 0.04);
             border: 1px solid rgba(255, 255, 255, 0.05);
@@ -278,7 +277,7 @@
         }
 
         .tool-badge {
-            font-size: 8px; /* Slightly increased to match new proportions */
+            font-size: 8px; 
             font-weight: 800;
             padding: 2px 4px;
             border-radius: 4px;
@@ -290,14 +289,14 @@
 
         .tool-name {
             font-weight: 700;
-            font-size: 10px; /* Increased by 2px (was 9px) */
+            font-size: 10px; 
             color: var(--text-primary);
             letter-spacing: -0.2px;
         }
 
         .tool-payload {
             font-family: 'SF Mono', 'Fira Code', monospace;
-            font-size: 9.5px; /* Increased by 2px (was 7.5px) */
+            font-size: 9.5px; 
             line-height: 1.3;
             color: var(--text-secondary);
             background: rgba(0, 0, 0, 0.3);
@@ -315,7 +314,7 @@
             color: var(--text-primary);
             border: 1px solid rgba(255, 255, 255, 0.15);
             border-radius: 12px;
-            padding: 6px 30px 6px 12px; /* Extra right padding for the arrow */
+            padding: 6px 30px 6px 12px; 
             font-size: 11px;
             font-weight: 800;
             letter-spacing: 0.5px;
@@ -388,21 +387,18 @@
             flex-direction: column;
             overflow: hidden;
             position: relative;
-            /* CHROME FIX: isolate stacking context so nested backdrop-filter children
-               (e.g. frosted device cards over room photos) render against their own
-               background, not against the parent panel's backdrop blur. */
             isolation: isolate;
             transform: translateZ(0);
         }
 
         /* PANEL 1: AI CORE */
         #voice-controller {
-            width: 280px; /* narrowed */
+            width: 280px; 
             flex-shrink: 0;
-            justify-content: flex-start; /* Fix for overlap pushing items off screen */
-            padding: 24px 20px; /* Reduced vertical/horizontal padding */
+            justify-content: flex-start; 
+            padding: 24px 20px; 
             z-index: 10;
-            overflow-y: auto; /* Fallback if screen is very short */
+            overflow-y: auto; 
         }
 
         .agent-header {
@@ -417,7 +413,6 @@
             font-weight: 700;
             letter-spacing: -0.6px;
             color: #FFFFFF;
-            /* Flexbox to align the logo and text side-by-side */
             display: flex;
             align-items: center;
             justify-content: center;
@@ -436,11 +431,11 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 12px; /* Tightened from 16px */
+            gap: 12px; 
             transition: transform 0.2s cubic-bezier(0.25, 1, 0.5, 1);
             border-radius: 32px;
             padding: 10px;
-            margin-top: 8px; /* Added spacing from the section above */
+            margin-top: 8px; 
         }
 
         .orb-interaction-zone:active {
@@ -552,20 +547,17 @@
             
             padding: 8px 24px;
             border-radius: 30px;
-            border: none; /* Borders removed */
+            border: none; 
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
             transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 
-            box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.15); /* The Apple Glass Highlight */
+            box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.15); 
         }
 
-        /* DYNAMIC STATE GLOWS (No borders, gradient backgrounds + split shadows) */
-        
+        /* DYNAMIC STATE GLOWS */
         .orb-container.state-listening + .mic-instruction {
             color: #FFFFFF;
-            /* Matches orb: Blue left, Green right */
             background: linear-gradient(135deg, rgba(10, 132, 255, 0.15) 0%, rgba(48, 209, 88, 0.15) 100%);
-            /* Blue glow left, Green glow right */
             box-shadow: -15px 0 30px rgba(10, 132, 255, 0.2), 15px 0 30px rgba(48, 209, 88, 0.2);
             text-shadow: 0 0 12px rgba(255, 255, 255, 0.9);
         }
@@ -579,9 +571,7 @@
 
         .orb-container.state-speaking + .mic-instruction {
             color: #FFFFFF;
-            /* Matches orb: Purple left, Pink/Red right */
             background: linear-gradient(135deg, rgba(191, 90, 242, 0.15) 0%, rgba(255, 55, 95, 0.15) 100%);
-            /* Purple glow left, Pink glow right */
             box-shadow: -15px 0 30px rgba(191, 90, 242, 0.2), 15px 0 30px rgba(255, 55, 95, 0.2);
             text-shadow: 0 0 12px rgba(255, 255, 255, 0.9);
         }
@@ -591,8 +581,8 @@
             flex-direction: column;
             gap: 16px;
             border-top: 1px solid rgba(255, 255, 255, 0.06);
-            padding-top: 12px; /* slightly reduced */
-            margin-top: auto; /* Forces this to the bottom naturally */
+            padding-top: 12px; 
+            margin-top: auto; 
             padding-bottom: 12px;
         }
 
@@ -606,6 +596,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            width: 100%;
         }
 
         .vital-label {
@@ -664,8 +655,8 @@
             display: flex;
             justify-content: center;
             margin-top: 8px;
-            margin-bottom: 16px; /* Keeps it away from the line */
-            flex-shrink: 0;      /* Prevents it from getting squished */
+            margin-bottom: 16px; 
+            flex-shrink: 0;      
             opacity: 0;
             pointer-events: none;
             transition: opacity 0.3s ease;
@@ -677,12 +668,12 @@
         }
 
         .end-btn {
-            background: rgba(255, 69, 58, 0.15); /* Slightly more red so it doesn't need a border */
+            background: rgba(255, 69, 58, 0.15); 
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
             color: var(--apple-red);
-            border: none; /* Kill the border */
-            box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.1); /* Give it the same glass lip */
+            border: none; 
+            box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.1); 
             padding: 12px 32px;
             border-radius: 30px;
             font-size: 11px;
@@ -708,7 +699,7 @@
             position: relative;
             width: 100%;
             margin-top: 0;
-            flex-grow: 0; /* Starts collapsed */
+            flex-grow: 0; 
             opacity: 0;
             overflow: hidden;
             pointer-events: none;
@@ -716,7 +707,7 @@
         }        
 
         .chat-container.visible {
-            flex-grow: 1; /* Consumes all empty vertical space, pushing the End button down! */
+            flex-grow: 1; 
             margin-top: 24px;
             margin-bottom: 16px; 
             opacity: 1;
@@ -729,7 +720,6 @@
             background: rgba(0, 0, 0, 0.2); 
             border: none; 
             border-radius: 20px; 
-            /* 52px bottom padding ensures text wraps above the bottom-right button */
             padding: 16px 16px 52px 16px; 
             color: #FFF;
             font-size: 14px; 
@@ -759,13 +749,13 @@
         .chat-send-btn {
             position: absolute;
             right: 12px;
-            bottom: 12px; /* Docked cleanly to the bottom right */
+            bottom: 12px; 
             top: auto; 
             width: 36px; 
             height: 36px;
             border-radius: 50%;
-            background: #FFFFFF; /* Pure White Circle */
-            color: #000000;      /* Pure Black Arrow */
+            background: #FFFFFF; 
+            color: #000000;      
             border: none;
             display: flex;
             justify-content: center;
@@ -790,67 +780,9 @@
             stroke-width: 2.5px; 
         }        
 
-        /* --- ROW LAYOUT --- */
-        .vital-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            width: 100%;
-        }
-
-        /* --- TEXT STYLING --- */
-        .vital-label {
-            color: rgba(255, 255, 255, 0.7);
-            font-size: 14px;
-            font-weight: 500;
-        }
-
-        .device-summary-list {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-        }
-
-        .summary-tag {
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            padding: 8px 12px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 500;
-            color: var(--text-secondary);
-            display: flex;
-            align-items: center;
-            justify-content: flex-start;
-            gap: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.1);
-            transition: all 0.2s ease;
-        }
-
-        .tag-icon-mini {
-            width: 14px;
-            height: 14px;
-            color: var(--text-tertiary);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .tag-icon-mini svg {
-            width: 100%;
-            height: 100%;
-            stroke-width: 2.5px;
-        }
-
-        .summary-tag span {
-            color: var(--text-primary);
-            font-weight: 700;
-            font-size: 14px;
-        }
-
         /* --- RIGHT PANEL: DATA LAYER --- */
         .right-column {
-            flex-grow: 1; /* Allow right column to take remaining space */
+            flex-grow: 1; 
             min-width: 0;
             display: grid;
             grid-template-rows: minmax(120px, auto) 1fr;
@@ -914,422 +846,6 @@
             line-height: 1.3;
         }
 
-        /* SMART HOME GRID */
-        #main-grid-wrapper {
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-            min-height: 0; /* CRITICAL FIX: Ensures flex children can properly shrink and pass overflow down */
-            transition: filter 0.6s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.6s ease;
-        }
-
-        .grid-blurred {
-            filter: blur(12px) brightness(0.3);
-            opacity: 0.6;
-            pointer-events: none;
-            transform: scale(0.98);
-        }
-
-        .grid-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 24px;
-            padding: 0 12px;
-            flex-shrink: 0;
-        }
-
-        .grid-title {
-            font-size: 20px;
-            font-weight: 700;
-            letter-spacing: -0.4px;
-            color: #FFFFFF;
-        }
-
-        #device-grid-container {
-            padding: 24px 36px;
-            display: flex;
-            flex-direction: column;
-            overflow-y: hidden;
-            flex-grow: 1;
-            position: relative;
-            z-index: 1;
-        }
-
-        #device-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 16px;
-            align-content: start;
-            overflow-y: auto;
-            flex-grow: 1;
-            padding-bottom: 60px; /* Gives the user space to scroll past the fade */
-            
-            /* PREMIUM SCROLL INDICATOR: Fades out the bottom 50px of the grid visually! */
-            mask-image: linear-gradient(to bottom, black 0%, black calc(100% - 50px), transparent 100%);
-            -webkit-mask-image: linear-gradient(to bottom, black 0%, black calc(100% - 50px), transparent 100%);
-        }
-
-        /* DEVICE CARDS */
-        .device-card {
-            background: rgba(20, 20, 22, 0.5);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 22px;
-            padding: 18px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            height: 150px;
-            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-            position: relative;
-            overflow: hidden;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.1);
-        }
-
-        .device-card.on {
-            background: var(--apple-blue-bg);
-            border-color: rgba(10, 132, 255, 0.3);
-            box-shadow: 0 12px 40px rgba(10, 132, 255, 0.25), 
-                        inset 0 1px 2px rgba(255, 255, 255, 0.3), 
-                        inset 0 0 20px rgba(10, 132, 255, 0.15);
-        }
-
-        .device-card.on::before {
-            content: '';
-            position: absolute;
-            top: -50px;
-            right: -50px;
-            width: 150px;
-            height: 150px;
-            background: radial-gradient(circle, var(--apple-blue-glow) 0%, transparent 70%);
-            opacity: 0.6;
-            pointer-events: none;
-        }
-
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            z-index: 1;
-        }
-
-        .icon-container {
-            width: 38px;
-            height: 38px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.06);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            transition: all 0.4s ease;
-            box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.15);
-            color: var(--text-primary);
-        }
-
-        .icon-container svg {
-            width: 18px;
-            height: 18px;
-            stroke-width: 2px;
-        }
-
-        .device-card.on .icon-container {
-            background: var(--apple-blue);
-            color: #000;
-            box-shadow: 0 0 20px var(--apple-blue-glow), inset 0 2px 4px rgba(255, 255, 255, 0.5);
-        }
-
-        .card-status-label {
-            font-size: 14px;
-            font-weight: 700;
-            letter-spacing: 1px;
-            color: var(--text-tertiary);
-            text-transform: uppercase;
-        }
-
-        .device-card.on .card-status-label {
-            color: #FFFFFF;
-        }
-
-        .card-footer {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            z-index: 1;
-            width: 100%;
-        }
-
-        .card-info {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
-
-        .device-name {
-            font-size: 15px;
-            font-weight: 600;
-            color: var(--text-primary);
-            letter-spacing: -0.2px;
-            line-height: 1.2;
-        }
-
-        .room-name {
-            font-size: 12px;
-            color: var(--text-secondary);
-            font-weight: 500;
-            letter-spacing: 0px;
-            line-height: 1.4;
-        }
-
-        .device-metric-pill {
-            background: rgba(0, 0, 0, 0.4);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            padding: 6px 10px;
-            border-radius: 16px;
-            font-size: 11px;
-            font-weight: 700;
-            color: #FFFFFF;
-            backdrop-filter: blur(10px);
-            transition: all 0.3s ease;
-            white-space: nowrap;
-            letter-spacing: 0.2px;
-        }
-
-        .device-card.on .device-metric-pill {
-            background: rgba(10, 132, 255, 0.15);
-            border-color: rgba(10, 132, 255, 0.3);
-            color: #FFFFFF;
-        }
-
-        /* --- VIEW TOGGLE & ROOM LAYOUT --- */
-        .view-toggle {
-            display: flex;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 20px;
-            padding: 4px;
-            gap: 4px;
-        }
-
-        .view-btn {
-            background: transparent;
-            border: none;
-            color: var(--text-tertiary);
-            width: 32px;
-            height: 32px;
-            border-radius: 16px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        .view-btn.active {
-            background: rgba(255, 255, 255, 0.15);
-            color: #FFF;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-        }
-
-        .view-btn svg {
-            width: 16px;
-            height: 16px;
-            stroke-width: 2.5px;
-        }
-
-        #device-grid.grid-mode-room {
-            display: flex;
-            flex-direction: column;
-            gap: 32px;
-        }
-
-        /* ROOM VIEW: the room photo IS the container — cards float inside it */
-        .room-group {
-            position: relative;
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-            padding: 88px 28px 28px;
-            min-height: 340px;
-            border-radius: 28px;
-            overflow: hidden;
-            background-color: rgba(20, 20, 22, 0.8);
-            background-size: cover;
-            background-position: center;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55), inset 0 1px 2px rgba(255, 255, 255, 0.12);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            /* CHROME FIX: own stacking context for nested frosted cards */
-            isolation: isolate;
-            transform: translateZ(0);
-            animation: slide-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-
-        .room-group::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.15) 35%, rgba(0,0,0,0.55) 100%);
-            z-index: 0;
-        }
-
-        .room-label {
-            position: absolute;
-            top: 28px;
-            left: 32px;
-            z-index: 2;
-            font-size: 28px;
-            font-weight: 700;
-            letter-spacing: -0.6px;
-            color: #FFF;
-            text-shadow: 0 2px 20px rgba(0, 0, 0, 0.6);
-        }
-
-        .room-grid {
-            position: relative;
-            z-index: 1;
-            display: grid;
-            /* auto-fill so empty tracks stay empty — cards don't stretch to fill width.
-               Match the 180px min and 150px height of the device-view grid exactly. */
-            grid-template-columns: repeat(auto-fill, minmax(180px, 200px));
-            gap: 14px;
-        }
-
-        /* FROSTED CARDS sit on the room photo — same dimensions as device view */
-        .room-group .device-card {
-            height: 150px;
-            background: rgba(18, 18, 20, 0.55);
-            backdrop-filter: blur(24px) saturate(1.4);
-            -webkit-backdrop-filter: blur(24px) saturate(1.4);
-            border: 1px solid rgba(255, 255, 255, 0.14);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45), inset 0 1px 2px rgba(255, 255, 255, 0.12);
-        }
-
-        .room-group .device-card.on {
-            background: rgba(10, 132, 255, 0.22);
-            backdrop-filter: blur(24px) saturate(1.4);
-            -webkit-backdrop-filter: blur(24px) saturate(1.4);
-            border-color: rgba(10, 132, 255, 0.45);
-            box-shadow: 0 12px 40px rgba(10, 132, 255, 0.3),
-                        inset 0 1px 2px rgba(255, 255, 255, 0.3),
-                        inset 0 0 20px rgba(10, 132, 255, 0.15);
-        }
-
-        /* --- DYNAMIC HERO STACK OVERLAY --- */
-        #hero-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            opacity: 0;
-            pointer-events: none;
-            z-index: 10;
-            transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-            background: rgba(0, 0, 0, 0.2); 
-        }
-
-        #hero-overlay.active {
-            opacity: 1;
-            pointer-events: auto;
-        }
-
-        #hero-stack {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-            width: 100%;
-            max-width: 620px; 
-            padding: 80px 20px;
-            max-height: 100%;
-            overflow-y: auto;
-            pointer-events: auto; 
-            scrollbar-width: none; 
-            -ms-overflow-style: none; 
-            mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%);
-            -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%);
-        }
-        
-        #hero-stack::-webkit-scrollbar { display: none; }
-
-        /* The Base Row Styling */
-        .hero-row {
-            border-radius: 28px;
-            padding: 24px 28px;
-            display: flex;
-            align-items: center;
-            gap: 24px;
-            box-shadow: 0 40px 100px rgba(0, 0, 0, 0.8), inset 0 2px 2px rgba(255, 255, 255, 0.05);
-            transform: translateY(30px) scale(0.95);
-            opacity: 0;
-            animation: slide-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-            position: relative;
-            overflow: hidden;
-            flex-shrink: 0; 
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        @keyframes slide-in {
-            100% { transform: translateY(0) scale(1); opacity: 1; }
-        }
-
-        .hero-row > * { z-index: 1; position: relative; }
-
-        .hero-row-icon {
-            width: 56px;
-            height: 56px;
-            border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            color: #000;
-            box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.4);
-            flex-shrink: 0;
-        }
-        .hero-row-icon svg { width: 26px; height: 26px; stroke-width: 2.5px; }
-
-        .hero-row-info { flex-grow: 1; display: flex; flex-direction: column; gap: 4px; }
-        .hero-row-name { font-size: 20px; font-weight: 700; color: #FFF; letter-spacing: -0.3px; }
-        .hero-row-room { font-size: 15px; font-weight: 500; color: var(--text-secondary); }
-
-        .hero-row-action { display: flex; flex-direction: column; align-items: flex-end; text-align: right; gap: 4px; }
-        .hero-action-label { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; }
-        .hero-action-metric { font-size: 32px; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -1.5px; line-height: 1; color: #FFF; }
-
-        /* STATE COLORS FOR DYNAMIC HERO ROWS */
-        .hero-row.state-on { 
-            background: linear-gradient(90deg, rgba(48, 209, 88, 0.25) 0%, rgba(20, 20, 22, 0.95) 60%);
-            border-color: rgba(48, 209, 88, 0.4); 
-            box-shadow: 0 20px 60px rgba(48, 209, 88, 0.1), inset 0 2px 2px rgba(255, 255, 255, 0.1); 
-        }
-        .hero-row.state-on .hero-row-icon { background: var(--apple-green); box-shadow: 0 0 20px var(--apple-green-glow); }
-        .hero-row.state-on .hero-action-label { color: var(--apple-green); }
-
-        .hero-row.state-off { 
-            background: linear-gradient(90deg, rgba(255, 255, 255, 0.08) 0%, rgba(20, 20, 22, 0.95) 60%);
-            border-color: rgba(255, 255, 255, 0.1); 
-        }
-        .hero-row.state-off .hero-row-icon { background: rgba(255, 255, 255, 0.15); color: #FFF; box-shadow: none; }
-        .hero-row.state-off .hero-action-label { color: var(--text-secondary); }
-        .hero-row.state-off .hero-action-metric { color: var(--text-secondary); }
-
-        .hero-row.state-cooling { 
-            background: linear-gradient(90deg, rgba(10, 132, 255, 0.3) 0%, rgba(20, 20, 22, 0.95) 60%);
-            border-color: rgba(10, 132, 255, 0.4); 
-            box-shadow: 0 20px 60px rgba(10, 132, 255, 0.15), inset 0 2px 2px rgba(255, 255, 255, 0.1); 
-        }
-        .hero-row.state-cooling .hero-row-icon { background: var(--apple-blue); box-shadow: 0 0 20px var(--apple-blue-glow); }
-        .hero-row.state-cooling .hero-action-label { color: var(--apple-blue); }
-
-        .hero-row.state-heating { 
-            background: linear-gradient(90deg, rgba(255, 69, 58, 0.25) 0%, rgba(20, 20, 22, 0.95) 60%);
-            border-color: rgba(255, 69, 58, 0.4); 
-            box-shadow: 0 20px 60px rgba(255, 69, 58, 0.15), inset 0 2px 2px rgba(255, 255, 255, 0.1); 
-        }
-        .hero-row.state-heating .hero-row-icon { background: var(--apple-red); box-shadow: 0 0 20px var(--apple-red-glow); }
-        .hero-row.state-heating .hero-action-label { color: var(--apple-red); }
-
         /* ANIMATIONS */
         @keyframes breathe {
             0%, 100% { transform: scale(1); box-shadow: inset 0 10px 20px rgba(255, 255, 255, 0.4), 0 0 20px rgba(151, 8, 204, 0.2); }
@@ -1372,27 +888,29 @@
             50% { transform: rotate(180deg) scale(1.05); border-top-width: 5px; }
             100% { transform: rotate(360deg) scale(1); }
         }
+        @keyframes slide-in {
+            100% { transform: translateY(0) scale(1); opacity: 1; }
+        }
 
         /* --- APPLE "ZERO-CHROME" SCROLLBAR --- */
         ::-webkit-scrollbar {
-            width: 16px; /* Large invisible hit area for easy grabbing */
+            width: 16px; 
             height: 16px;
         }
         ::-webkit-scrollbar-track {
             background: transparent;
-            margin-bottom: 50px; /* Prevent fading underneath the device mask */
+            margin-bottom: 50px; 
             margin-top: 10px;
         }
         ::-webkit-scrollbar-thumb {
             background-color: rgba(255, 255, 255, 0.2);
             border-radius: 100px;
-            /* The Magic: Creates a thin floating pill inside the larger clickable area */
             border: 5px solid transparent; 
             background-clip: padding-box;
         }
         ::-webkit-scrollbar-thumb:hover {
             background-color: rgba(255, 255, 255, 0.4);
-            border-width: 4px; /* Expands slightly on hover for tactile feedback */
+            border-width: 4px; 
         }
 
         /* --- MODAL SYSTEM --- */
@@ -1437,7 +955,6 @@
             flex-grow: 1; padding: 32px; display: flex; flex-direction: column; overflow: hidden;
         }
         
-        /* Auto-magical scaling when the container moves into the modal! */
         #tool-modal-overlay #tool-log-container { gap: 16px; padding-right: 16px; }
         #tool-modal-overlay .tool-entry { padding: 16px 20px; border-radius: 16px; gap: 12px; }
         #tool-modal-overlay .tool-entry.request { margin-right: 60px; border-left-width: 4px; }
@@ -1473,105 +990,17 @@
             transform: scale(0.98);
         }
         
-        .agent-title {
-            font-size: 20px;
-            font-weight: 700;
-            letter-spacing: -0.6px;
-            color: #FFFFFF;
-            /* Flexbox to align the logo and text side-by-side */
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-
         .logo {
             height: 24px; 
             width: auto;
-            max-width: 120px; /* Prevents it from getting too wide */
-            object-fit: contain; /* Prevents stretching/distortion */
+            max-width: 120px; 
+            object-fit: contain; 
             background-color: #FFFFFF; 
             padding: 4px 8px;
             border-radius: 8px;
             box-shadow: 0 4px 12px rgba(153, 204, 51, 0.3); 
             display: block;
             align-self: center;
-        }
-        
-        /* --- CAMERA CAROUSEL MODAL --- */
-        #camera-modal-overlay {
-            display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85);
-            backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
-            z-index: 10000; justify-content: center; align-items: center;
-            opacity: 0; transition: opacity 0.3s ease;
-        }
-        #camera-modal-overlay.active { display: flex; opacity: 1; }
-
-        .camera-modal-box {
-            width: 90%; max-width: 600px; background: #141416;
-            border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px;
-            box-shadow: 0 40px 100px rgba(0, 0, 0, 0.9), inset 0 1px 1px rgba(255,255,255,0.15);
-            display: flex; flex-direction: column; overflow: hidden;
-            transform: scale(0.95); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        #camera-modal-overlay.active .camera-modal-box { transform: scale(1); }
-
-        .camera-modal-header {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 16px 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); background: rgba(0,0,0,0.4);
-        }
-
-        .camera-modal-title-group { display: flex; align-items: center; gap: 12px; }
-
-        .camera-status-dot {
-            width: 10px; height: 10px; border-radius: 50%;
-            background: var(--apple-green); box-shadow: 0 0 10px var(--apple-green-glow);
-        }
-
-        .camera-modal-title { font-size: 18px; font-weight: 700; color: #fff; letter-spacing: -0.3px; }
-
-        .camera-id-pill {
-            font-family: var(--mono); font-size: 11px; font-weight: 600; padding: 4px 10px;
-            border-radius: 8px; background: rgba(255,255,255,0.1); color: var(--text-secondary);
-        }
-
-        .camera-close-btn {
-            background: rgba(255,255,255,0.1); border: none; width: 32px; height: 32px;
-            border-radius: 16px; color: #fff; font-size: 20px; line-height: 1;
-            cursor: pointer; display: flex; justify-content: center; align-items: center; transition: all 0.2s;
-        }
-        .camera-close-btn:hover { background: rgba(255,69,58,0.2); color: var(--apple-red); transform: rotate(90deg); }
-
-        .camera-modal-body {
-            position: relative; width: 100%; aspect-ratio: 4/3; background: #000;
-            display: flex; align-items: center; justify-content: center; overflow: hidden;
-        }
-
-        .camera-view-img { width: 100%; height: 100%; object-fit: cover; }
-
-        .camera-nav-btn {
-            position: absolute; top: 50%; transform: translateY(-50%);
-            background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); color: #fff;
-            width: 40px; height: 40px; border-radius: 20px; cursor: pointer;
-            display: flex; justify-content: center; align-items: center;
-            backdrop-filter: blur(8px); transition: all 0.2s; z-index: 10;
-        }
-        .camera-nav-btn:hover { background: rgba(255,255,255,0.2); transform: translateY(-50%) scale(1.1); }
-        .camera-nav-btn.left { left: 16px; }
-        .camera-nav-btn.right { right: 16px; }
-        .camera-nav-btn[disabled] { opacity: 0.3; pointer-events: none; }
-
-        .camera-overlay-stats {
-            position: absolute; top: 16px; right: 16px; background: rgba(0,0,0,0.6);
-            backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.1);
-            padding: 8px 12px; border-radius: 8px; font-family: var(--mono);
-            font-size: 11px; color: rgba(255,255,255,0.8); text-align: right; line-height: 1.4;
-        }
-
-        .camera-response-text {
-            padding: 16px 20px; background: rgba(0,0,0,0.3); font-size: 14px;
-            color: var(--text-primary); border-top: 1px solid rgba(255,255,255,0.08);
-            line-height: 1.5; font-weight: 500;
         }
 
     </style>
@@ -1628,7 +1057,7 @@
 
             <div class="setting-item">
                 <span class="setting-label">Initialize Demo</span>
-                <a href="https://telcodemos.com/live-smarthome-agent/initialize" target="_blank" class="setting-link-btn">
+                <a href="https://telcodemos.com/live-ai-concierge/initialize" target="_blank" class="setting-link-btn">
                     Open
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="10" height="10">
                         <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
@@ -1636,19 +1065,7 @@
                         <line x1="10" y1="14" x2="21" y2="3"></line>
                     </svg>
                 </a>
-            </div>
-
-            <div class="setting-item">
-                <span class="setting-label">Camera Viewer</span>
-                <a href="https://telcodemos.com/live-smarthome-agent/camview" target="_blank" class="setting-link-btn">
-                    Open
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="10" height="10">
-                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                        <polyline points="15 3 21 3 21 9"></polyline>
-                        <line x1="10" y1="14" x2="21" y2="3"></line>
-                    </svg>
-                </a>
-            </div>            
+            </div>           
 
             <div class="tool-log-section">
                 <div class="tool-log-header">
@@ -1681,8 +1098,8 @@
             
             <div class="agent-header">
                 <div class="agent-title">
-                    <!--img src="/live-smarthome-agent/static/logo.svg" alt="Logo" class="logo">-->
-                    <span>Aris Smart Home</span>
+                    <!--img src="/live-ai-concierge/static/logo.svg" alt="Logo" class="logo">-->
+                    <span>Concierge AI</span>
                 </div>
                 <div class="agent-subtitle">ADK Agent (Gemini Live Flash 2.5)</div>
             </div>
@@ -1696,41 +1113,6 @@
                         id="device-count">0</span>
                 </div>
 
-                <div class="device-summary-list" style="margin-top: 12px;">
-                    <div class="summary-tag">
-                        <div class="tag-icon-mini"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                <path d="M2 12h20M12 2v20M20 16l-4-4 4-4M4 8l4 4-4 4M16 4l-4 4-4-4M8 20l4-4 4 4" />
-                            </svg></div>
-                        <div style="display: flex; align-items: center; gap: 8px; width: 100%;">
-                            <span id="count-ac">0</span> ACs
-                        </div>
-                    </div>
-
-                    <div class="summary-tag">
-                        <div class="tag-icon-mini"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                <path
-                                    d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" />
-                                <circle cx="12" cy="13" r="3" />
-                            </svg></div>
-                        <div><span id="count-camera">0</span> Cameras</div>
-                    </div>
-                    <div class="summary-tag">
-                        <div class="tag-icon-mini"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                <path
-                                    d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1.3.5 2.6 1.5 3.5.8.8 1.3 1.5 1.5 2.5" />
-                                <path d="M9 18h6" />
-                                <path d="M10 22h4" />
-                            </svg></div>
-                        <div><span id="count-light">0</span> Lights</div>
-                    </div>
-                    <div class="summary-tag">
-                        <div class="tag-icon-mini"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                            </svg></div>
-                        <div><span id="count-lock">0</span> Lock</div>
-                    </div>
-                </div>
             </div>
 
             <!-- ID added here for app.js to bind the connection -->
@@ -1778,34 +1160,6 @@
                 <div class="user-text" id="transcript-user">Press connect, then speak...</div>
                 <div class="ai-text" id="transcript-ai"></div>
             </div>
-
-            <div class="glass-panel" id="device-grid-container">
-                
-                <!-- NEW HERO STACK OVERLAY INJECTED HERE -->
-                <div id="hero-overlay">
-                    <div id="hero-stack">
-                        <!-- Dynamic Hero Rows will be injected here sequentially via JS -->
-                    </div>
-                </div>
-
-                <div id="main-grid-wrapper">
-                    <div class="grid-header">
-                        <div class="grid-title">My Smart Home</div>
-                        <!-- NEW: Segmented Control View Toggle -->
-                        <div class="view-toggle">
-                            <button class="view-btn active" id="btn-view-device" title="All Devices">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
-                            </button>
-                            <button class="view-btn" id="btn-view-room" title="Group by Room">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-                            </button>
-                        </div>
-                    </div>
-                    <div id="device-grid">
-                        <!-- Cards generated via JS -->
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
 
@@ -1821,36 +1175,7 @@
                 <!-- Log container gets MOVED here when opened -->
             </div>
         </div>
-    </div>
-    
-    <!-- CAMERA CAROUSEL MODAL -->
-    <div id="camera-modal-overlay">
-        <div class="camera-modal-box">
-            <div class="camera-modal-header">
-                <div class="camera-modal-title-group">
-                    <div class="camera-status-dot"></div>
-                    <div class="camera-modal-title" id="cam-modal-title">Kitchen View</div>
-                    <div class="camera-id-pill" id="cam-modal-id">cam-1</div>
-                </div>
-                <button class="camera-close-btn" id="cam-modal-close">&times;</button>
-            </div>
-            <div class="camera-modal-body">
-                <img id="cam-modal-img" class="camera-view-img" src="" alt="Camera Stream">
-                <div class="camera-overlay-stats">
-                    ID: <span id="cam-overlay-id">cam-1</span><br>
-                    ROOM: <span id="cam-overlay-room">Kitchen</span><br>
-                    TIME: <span id="cam-overlay-time">10:30:05 AM</span>
-                </div>
-                <button class="camera-nav-btn left" id="cam-modal-prev">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><polyline points="15 18 9 12 15 6"></polyline></svg>
-                </button>
-                <button class="camera-nav-btn right" id="cam-modal-next">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                </button>
-            </div>
-            <div class="camera-response-text" id="cam-modal-response"></div>
-        </div>
-    </div>    
+    </div>   
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
@@ -1875,14 +1200,6 @@
                     switchEl.classList.toggle('active');
                 });
             });
-
-            // NEW: Bind View Toggle Buttons
-            const btnDevice = document.getElementById('btn-view-device');
-            const btnRoom = document.getElementById('btn-view-room');
-            if(btnDevice && btnRoom) {
-                btnDevice.addEventListener('click', () => { if(window.switchView) window.switchView('device'); });
-                btnRoom.addEventListener('click', () => { if(window.switchView) window.switchView('room'); });
-            }
         });
 
         // --- 1. FIREBASE SETUP ---
@@ -1898,105 +1215,8 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app, "live-smartcamera");
 
-        // --- 2. ICON MAP & STATE ---
-        const icons = {
-            ac: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M2 12h20M12 2v20M20 16l-4-4 4-4M4 8l4 4-4 4M16 4l-4 4-4-4M8 20l4-4 4 4"/></svg>`,
-            camera: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>`,
-            light: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1.3.5 2.6 1.5 3.5.8.8 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>`,
-            lock: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`
-        };
-
         // EXPORT TO WINDOW SO APP.JS CAN READ THE DEVICE DATA
         window.devicesData = []; 
-
-        // --- 3. RENDER LOGIC ---
-        let currentViewMode = 'device';
-
-        // High Quality Curated Background Images for Rooms
-        const roomImages = {
-            'Living Room': '/live-smarthome-agent/static/livingroom.avif',
-            'Main Bedroom': '/live-smarthome-agent/static/mainbedroom.avif',
-            'Guest Bedroom': '/live-smarthome-agent/static/guestbedroom.avif',
-            'Kitchen': '/live-smarthome-agent/static/kitchen.avif',
-            'Front Door': '/live-smarthome-agent/static/frontdoor.avif',
-            'Default': '/live-smarthome-agent/static/default.avif'
-        };
-
-        window.switchView = function(mode) {
-            currentViewMode = mode;
-            document.getElementById('btn-view-device').classList.toggle('active', mode === 'device');
-            document.getElementById('btn-view-room').classList.toggle('active', mode === 'room');
-            
-            const grid = document.getElementById('device-grid');
-            if(mode === 'room') {
-                grid.classList.add('grid-mode-room');
-            } else {
-                grid.classList.remove('grid-mode-room');
-            }
-            
-            renderDeviceGrid();
-        };
-
-        function generateCardHTML(device, hideRoom = false) {
-            const isOn = device.state === 'on';
-            const deviceIcon = icons[device.deviceType] || ''; 
-            const metricText = `${device.settingLabel}: ${device.currentSettingValue}`;
-            const roomLine = hideRoom ? '' : `<span class="room-name">${device.room}</span>`;
-
-            return `
-                <div class="device-card ${isOn ? 'on' : 'off'}" id="${device.id}">
-                    <div class="card-header">
-                        <div class="icon-container">${deviceIcon}</div>
-                        <div class="status-group">
-                            <div class="card-status-label">${isOn ? 'ON' : 'OFF'}</div>
-                            <div class="device-metric-pill">${metricText}</div>
-                        </div>
-                    </div>
-                    <div class="card-footer">
-                        <div class="card-info">
-                            <span class="device-name">${device.deviceLabel}</span>
-                            ${roomLine}
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        function renderDeviceGrid() {
-            const grid = document.getElementById('device-grid');
-            grid.innerHTML = '';
-
-            if (currentViewMode === 'device') {
-                window.devicesData.forEach(device => {
-                    grid.insertAdjacentHTML('beforeend', generateCardHTML(device));
-                });
-            } else {
-                // Group devices by their Room property
-                const groupedByRoom = window.devicesData.reduce((acc, device) => {
-                    (acc[device.room] = acc[device.room] || []).push(device);
-                    return acc;
-                }, {});
-
-                for (const [roomName, devices] of Object.entries(groupedByRoom)) {
-                    const bgUrl = roomImages[roomName] || roomImages['Default'];
-                    
-                    // Cards with hideRoom=true since the room container already labels it
-                    let cardsHtml = '';
-                    devices.forEach(device => { cardsHtml += generateCardHTML(device, true); });
-
-                    // Room photo IS the container — cards float inside it as frosted glass
-                    const roomHtml = `
-                        <div class="room-group" style="background-image: url('${bgUrl}');">
-                            <div class="room-label">${roomName}</div>
-                            <div class="room-grid">
-                                ${cardsHtml}
-                            </div>
-                        </div>
-                    `;
-                    grid.insertAdjacentHTML('beforeend', roomHtml);
-                }
-            }
-        }
 
         // --- 4. REAL-TIME FIRESTORE LISTENER ---
         const docRef = doc(db, "home-users", "default");
@@ -2008,25 +1228,6 @@
                     
                     window.devicesData = Object.values(data.devices);
                     window.devicesData.sort((a, b) => a.id.localeCompare(b.id));
-                    
-                    const typeCounts = { ac: 0, camera: 0, light: 0, lock: 0 };
-                    window.devicesData.forEach(device => {
-                        if (typeCounts[device.deviceType] !== undefined) {
-                            typeCounts[device.deviceType]++;
-                        }
-                    });
-
-                    const countAcEl = document.getElementById('count-ac');
-                    const countCameraEl = document.getElementById('count-camera');
-                    const countLightEl = document.getElementById('count-light');
-                    const countLockEl = document.getElementById('count-lock');
-
-                    if(countAcEl) countAcEl.innerText = typeCounts.ac;
-                    if(countCameraEl) countCameraEl.innerText = typeCounts.camera;
-                    if(countLightEl) countLightEl.innerText = typeCounts.light;
-                    if(countLockEl) countLockEl.innerText = typeCounts.lock;
-
-                    renderDeviceGrid();
                     
                     const deviceCountEl = document.getElementById('device-count');
                     if (deviceCountEl) deviceCountEl.innerText = window.devicesData.length;
@@ -2064,107 +1265,7 @@
             }
         };
 
-        // --- 6. DYNAMIC HERO STACK EXPORT ---
-        let heroDismissTimeout = null;
-
-        window.addDynamicHeroAction = function(eventPayload) {
-            const overlay = document.getElementById('hero-overlay');
-            const stack = document.getElementById('hero-stack');
-            const gridWrapper = document.getElementById('main-grid-wrapper');
-            
-            if (!overlay.classList.contains('active')) {
-                overlay.classList.add('active');
-                gridWrapper.classList.add('grid-blurred');
-            }
-
-            // Find device from Firebase data
-            const device = window.devicesData.find(d => d.id === eventPayload.id);
-            if (!device) return;
-
-            let actionClass = '';
-            let actionLabel = '';
-            let metricText = '';
-            
-            const deviceType = device.deviceType; // From Firebase structure
-            const oldState = eventPayload.oldState.toLowerCase();
-            const newState = eventPayload.newState.toLowerCase();
-            const currentSetting = (eventPayload.currentSettingValue || '').toLowerCase();
-
-            console.log({ deviceType, oldState, newState, currentSetting });
-
-            if (newState === 'off') {
-                actionClass = 'state-off'; actionLabel = 'Turned Off'; metricText = 'Off'; 
-                if (deviceType === 'camera') actionLabel = 'Disabled';
-                if (deviceType === 'lock') actionLabel = 'Disengaged';
-            } else {
-                if (deviceType === 'ac') {
-                    const oldTemp = parseFloat(eventPayload.oldSettingValue);
-                    const newTemp = parseFloat(eventPayload.currentSettingValue);
-
-                    if (eventPayload.oldState === 'off') {
-                        actionClass = 'state-on'; actionLabel = 'Turned On'; metricText = `${newTemp}°`;
-                    } else if (newTemp < oldTemp) {
-                        actionClass = 'state-cooling'; actionLabel = 'Colder'; metricText = `${newTemp}°`;
-                    } else if (newTemp > oldTemp) {
-                        actionClass = 'state-heating'; actionLabel = 'Warmer'; metricText = `${newTemp}°`;
-                    } else {
-                        actionClass = 'state-on'; actionLabel = 'Updated'; metricText = `${newTemp}°`;
-                    }
-                } 
-                else if (deviceType === 'camera') {
-                    if (currentSetting === 'online') { actionClass = 'state-cooling'; actionLabel = 'Mode Set'; metricText = 'Online'; } 
-                    else if (currentSetting === 'private') { actionClass = 'state-heating'; actionLabel = 'Mode Set'; metricText = 'Private'; } 
-                    else if (currentSetting === 'protect') { actionClass = 'state-on'; actionLabel = 'Mode Set'; metricText = 'Protect'; } 
-                    else { actionClass = 'state-on'; actionLabel = 'Enabled'; metricText = 'On'; }
-                }
-                else if (deviceType === 'lock') {
-                    if (currentSetting === 'guest') { actionClass = 'state-cooling'; actionLabel = 'Mode Set'; metricText = 'Guest'; } 
-                    else if (currentSetting === 'party') { actionClass = 'state-heating'; actionLabel = 'Mode Set'; metricText = 'Party'; } 
-                    else if (currentSetting === 'dnd') { actionClass = 'state-on'; actionLabel = 'Mode Set'; metricText = 'DND'; } 
-                    else { actionClass = 'state-on'; actionLabel = 'Engaged'; metricText = 'On'; }
-                }
-                else if (deviceType === 'light') {
-                    if (currentSetting === 'cool') { actionClass = 'state-cooling'; actionLabel = 'Scene Set'; metricText = 'Cool'; } 
-                    else if (currentSetting === 'movie') { actionClass = 'state-heating'; actionLabel = 'Scene Set'; metricText = 'Movie'; } 
-                    else if (currentSetting === 'bright') { actionClass = 'state-on'; actionLabel = 'Scene Set'; metricText = 'Bright'; } 
-                    else { actionClass = 'state-on'; actionLabel = 'Turned On'; metricText = 'On'; }
-                }
-            }
-
-            const fontSizeStyle = metricText.length > 6 ? 'font-size: 24px; letter-spacing: -0.5px;' : '';
-            const deviceIcon = icons[deviceType] || '';
-
-            const rowEl = document.createElement('div');
-            rowEl.className = `hero-row ${actionClass}`;
-            rowEl.innerHTML = `
-                <div class="hero-row-icon">${deviceIcon}</div>
-                <div class="hero-row-info">
-                    <div class="hero-row-name">${device.deviceLabel}</div>
-                    <div class="hero-row-room">${device.room}</div>
-                </div>
-                <div class="hero-row-action">
-                    <div class="hero-action-label">${actionLabel}</div>
-                    <div class="hero-action-metric" style="${fontSizeStyle}">${metricText}</div>
-                </div>
-            `;
-
-            stack.appendChild(rowEl);
-            
-            // Auto scroll to bottom smoothly
-            stack.scrollTo({
-                top: stack.scrollHeight,
-                behavior: 'smooth'
-            });
-
-            if (heroDismissTimeout) clearTimeout(heroDismissTimeout);
-            heroDismissTimeout = setTimeout(() => {
-                overlay.classList.remove('active');
-                gridWrapper.classList.remove('grid-blurred');
-                setTimeout(() => { stack.innerHTML = ''; }, 600);
-            }, 3500); 
-        };
-
-        // --- 7. TOOL USE LOG EXPORT ---
+        // --- 6. TOOL USE LOG EXPORT ---
         const TOOL_LOG_CONFIG = {
             MAX_ENTRIES: 50,
             KNOWN_TOOLS: new Set([
@@ -2173,111 +1274,6 @@
                 'check_camera', 'check_notifications', 'find_people'
             ])
         };
-
-        // --- 8. CAMERA CAROUSEL EXPORT ---
-        let currentCameraList = [];
-        let currentCameraIndex = 0;
-
-        window.showCameraModal = function(payload) {
-            let data = payload;
-            // Parse if string
-            if (typeof payload === 'string') {
-                try { data = JSON.parse(payload); } catch (e) { console.error("Failed to parse camera payload"); return; }
-            }
-
-            // Filter array where is_user_query_addressed is true
-            const results = data.result || [];
-            currentCameraList = results.filter(cam => cam.is_user_query_addressed === true);
-            
-            // Abort if nothing matches
-            if (currentCameraList.length === 0) return;
-
-            currentCameraIndex = 0;
-            updateCameraModalView();
-
-            const overlay = document.getElementById('camera-modal-overlay');
-            overlay.style.display = 'flex';
-            setTimeout(() => overlay.classList.add('active'), 10);
-        };
-
-        function updateCameraModalView() {
-            if (currentCameraList.length === 0) return;
-            
-            const cam = currentCameraList[currentCameraIndex];
-            
-            // Update Header
-            document.getElementById('cam-modal-title').innerText = `${cam.room} View`;
-            document.getElementById('cam-modal-id').innerText = cam.id;
-            
-            // Update Image Overlay
-            document.getElementById('cam-overlay-id').innerText = cam.id;
-            document.getElementById('cam-overlay-room').innerText = cam.room;
-            document.getElementById('cam-overlay-time').innerText = cam.timestamp || new Date().toLocaleTimeString();
-            
-            // Update Context Response
-            document.getElementById('cam-modal-response').innerText = cam.response || '';
-
-            // Update Image with Cache-Busting
-            const imgEl = document.getElementById('cam-modal-img');
-            imgEl.src = `/live-smarthome-agent/static/camview/${cam.id}.jpg?t=${Date.now()}`;
-
-            // Manage Navigation Buttons
-            const prevBtn = document.getElementById('cam-modal-prev');
-            const nextBtn = document.getElementById('cam-modal-next');
-
-            if (currentCameraList.length <= 1) {
-                prevBtn.style.display = 'none';
-                nextBtn.style.display = 'none';
-            } else {
-                prevBtn.style.display = 'flex';
-                nextBtn.style.display = 'flex';
-                
-                if (currentCameraIndex === 0) prevBtn.setAttribute('disabled', 'true');
-                else prevBtn.removeAttribute('disabled');
-                
-                if (currentCameraIndex === currentCameraList.length - 1) nextBtn.setAttribute('disabled', 'true');
-                else nextBtn.removeAttribute('disabled');
-            }
-        }
-
-        // Bind Events for the Camera Modal
-        document.addEventListener('DOMContentLoaded', () => {
-            const closeBtn = document.getElementById('cam-modal-close');
-            const overlay = document.getElementById('camera-modal-overlay');
-            const prevBtn = document.getElementById('cam-modal-prev');
-            const nextBtn = document.getElementById('cam-modal-next');
-
-            if(closeBtn) {
-                closeBtn.addEventListener('click', () => {
-                    overlay.classList.remove('active');
-                    setTimeout(() => overlay.style.display = 'none', 300);
-                });
-            }
-            
-            if(overlay) {
-                overlay.addEventListener('click', (e) => {
-                    if (e.target === overlay) closeBtn.click();
-                });
-            }
-
-            if(prevBtn) {
-                prevBtn.addEventListener('click', () => {
-                    if (currentCameraIndex > 0) {
-                        currentCameraIndex--;
-                        updateCameraModalView();
-                    }
-                });
-            }
-
-            if(nextBtn) {
-                nextBtn.addEventListener('click', () => {
-                    if (currentCameraIndex < currentCameraList.length - 1) {
-                        currentCameraIndex++;
-                        updateCameraModalView();
-                    }
-                });
-            }
-        });        
 
         /**
         * Pure function to format tool payloads securely.
@@ -2406,9 +1402,6 @@
         
         initToolModal();
         
-        window.onload = () => {
-            renderDeviceGrid();
-        };
     </script>
 </body>
 </html>
