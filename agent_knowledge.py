@@ -98,11 +98,11 @@ def process_agent_knowledge(agent_name: str) -> str:
         "preserving all sections and information as is with strictly zero information loss."
     )
     
-    logger.info(f"[{agent_name}] Calling '{config.SUBAGENT_LITE_MODEL}' for markdown extraction...")
+    logger.info(f"[{agent_name}] Calling '{config.SUBAGENT_PRO_MODEL}' for markdown extraction...")
     
     try:
         response = client.models.generate_content(
-            model=config.SUBAGENT_LITE_MODEL,
+            model=config.SUBAGENT_PRO_MODEL,
             contents=[document_part, extraction_prompt],
             config=types.GenerateContentConfig(
                 temperature=0.1 # Lower temperature for more factual, verbatim extraction
