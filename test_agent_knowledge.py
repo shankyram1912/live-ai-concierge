@@ -47,7 +47,7 @@ if __name__ == "__main__":
         
         # Print a preview of the markdown to verify it worked without flooding the console
         if markdown_result:
-            print(markdown_result[:500] + "\n...[truncated]...")
+            print(markdown_result + "\n..............................")
         else:
             print("Warning: Returned markdown is empty.")
             
