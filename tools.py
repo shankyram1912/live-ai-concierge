@@ -1,6 +1,6 @@
 import os
 import logging
-from datetime import date
+from datetime import date, datetime
 from google.cloud import firestore
 from dotenv import load_dotenv
 
@@ -124,6 +124,12 @@ class Tools:
             saved_document_dict = _execute_order_transaction(
                 transaction, self.db, counter_ref, order_data
             )
+            
+            # --- THE FIX ---
+            # Replace the Firestore Sentinel value with a real string so the AI Agent 
+            # and JSON serializers can safely parse it in the response.
+            if 'created_at' in saved_document_dict:
+                saved_document_dict['created_at'] = datetime.now().isoformat()
             
             logger.info(f"[{agent_name}] Order successfully saved with ID: {saved_document_dict.get('order_id')}")
             return saved_document_dict
