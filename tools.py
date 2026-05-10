@@ -125,11 +125,12 @@ class Tools:
             order_data = {
                 "contact_number": contact_number,
                 "created_at": firestore.SERVER_TIMESTAMP,
+                "order_status": "Confirmed",
                 "order_details": {
                     "agent_name": agent_name,
                     "delivery_date": formatted_delivery_date, 
                     "delivery_address": delivery_address,
-                    "full_order_details": full_order_details
+                    "full_order_details": full_order_details,
                 }
             }
             
