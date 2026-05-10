@@ -66,4 +66,4 @@ if __name__ == "__main__":
         )
     )
     
-    return response.text
+    logger.info(f"[{agent_name}] Metadata Markdown: \n {response.text}")
