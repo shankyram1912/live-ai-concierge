@@ -846,6 +846,15 @@
             line-height: 1.3;
         }
 
+        /* --- NEW: ORDERS TABLE STYLES --- */
+        .agent-table { width: 100%; border-collapse: collapse; text-align: left; }
+        .agent-table th { padding: 12px 16px; font-size: 11px; font-weight: 700; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); background: rgba(255, 255, 255, 0.02); }
+        .agent-table td { padding: 16px; font-size: 13px; color: var(--text-primary); border-bottom: 1px solid rgba(255, 255, 255, 0.04); vertical-align: top; line-height: 1.5; }
+        .agent-table tr:hover td { background: rgba(255, 255, 255, 0.02); }
+        .truncate-box { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; position: relative; }
+        .table-expand-btn { background: transparent; border: none; color: var(--apple-blue); cursor: pointer; padding: 4px 0 0; display: inline-flex; align-items: center; transition: all 0.2s; border-radius: 4px; }
+        .table-expand-btn:hover { color: #fff; }
+
         /* ANIMATIONS */
         @keyframes breathe {
             0%, 100% { transform: scale(1); box-shadow: inset 0 10px 20px rgba(255, 255, 255, 0.4), 0 0 20px rgba(151, 8, 204, 0.2); }
@@ -1156,6 +1165,40 @@
                 <div class="user-text" id="transcript-user">Press connect, then speak...</div>
                 <div class="ai-text" id="transcript-ai"></div>
             </div>
+
+            <!-- NEW: SHOP ORDERS PANEL -->
+            <div class="glass-panel" id="orders-panel" style="flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; padding: 24px;">
+                <div style="font-size: 14px; font-weight: 700; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 1.4px; margin-bottom: 16px; flex-shrink: 0;">
+                    Shop Orders (Agent - <span id="orders-agent-name">None</span>)
+                </div>
+                <div class="table-body" style="background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; display: flex; flex-direction: column; flex-grow: 1; overflow: hidden;">
+                    <div id="orders-table-container" style="flex-grow: 1; overflow-y: auto;">
+                        <div style="padding: 40px; text-align: center; color: var(--text-secondary); font-size: 13px;">
+                            Select an agent from settings to view orders.
+                        </div>
+                    </div>
+                    <div id="orders-pagination-bar" style="display: none; justify-content: space-between; align-items: center; padding: 12px 16px; background: rgba(255, 255, 255, 0.02); border-top: 1px solid rgba(255, 255, 255, 0.08); font-size: 12px; color: var(--text-secondary); flex-shrink: 0;">
+                        <div>Showing <span id="orders-page-start">0</span> - <span id="orders-page-end">0</span> of <span id="orders-page-total">0</span></div>
+                        <div style="display: flex; gap: 10px;">
+                            <button id="orders-page-prev" style="background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 6px; padding: 4px 8px; cursor: pointer; color: var(--text-primary); transition: all 0.2s;" disabled>&lt; Prev</button>
+                            <button id="orders-page-next" style="background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 6px; padding: 4px 8px; cursor: pointer; color: var(--text-primary); transition: all 0.2s;" disabled>Next &gt;</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TEXTAREA FOCUS OVERLAY FOR ORDERS -->
+    <div id="focus-overlay" class="modal-overlay">
+        <div class="modal-box" style="width: 600px; height: 400px; max-width: 90%; display: flex; flex-direction: column;">
+            <div class="modal-header">
+                <h2 id="focus-title">Details</h2>
+                <button class="close-modal-btn" id="focus-close-btn">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 24px; flex-grow: 1; display: flex; flex-direction: column;">
+                <textarea id="focus-textarea" readonly style="flex-grow: 1; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 16px; color: #fff; font-family: 'SF Mono', monospace; font-size: 13px; line-height: 1.5; resize: none; outline: none;"></textarea>
+            </div>
         </div>
     </div>
 
@@ -1175,7 +1218,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-        import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+        import { getFirestore, collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
         // --- FIREBASE CONFIGURATION ---
         const firebaseConfig = {
@@ -1193,6 +1236,153 @@
             db = getFirestore(app, "live-concierge-ai");
         } catch (e) {
             console.error("Firebase init failed:", e);
+        }
+
+        // --- NEW: ORDERS FETCHING & RENDERING ---
+        let allOrdersData = [];
+        let currentOrdersPage = 1;
+        const ordersPerPage = 5;
+
+        async function loadOrdersForAgent(agentName) {
+            const container = document.getElementById('orders-table-container');
+            const agentNameLabel = document.getElementById('orders-agent-name');
+            const paginationBar = document.getElementById('orders-pagination-bar');
+            
+            agentNameLabel.textContent = agentName || "None";
+            
+            if (!agentName) {
+                container.innerHTML = `<div style="padding: 40px; text-align: center; color: var(--text-secondary); font-size: 13px;">Select an agent from settings to view orders.</div>`;
+                paginationBar.style.display = 'none';
+                return;
+            }
+
+            container.innerHTML = `<div style="padding: 40px; text-align: center; color: var(--text-secondary); font-size: 13px;">Loading orders...</div>`;
+            
+            try {
+                const ordersRef = collection(db, "orders");
+                // Removed orderBy to prevent Firestore from demanding a composite index
+                const q = query(ordersRef, where("order_details.agent_name", "==", agentName));
+                const snapshot = await getDocs(q);
+                
+                allOrdersData = [];
+                snapshot.forEach(doc => {
+                    allOrdersData.push({ id: doc.id, ...doc.data() });
+                });
+                
+                // Sort client-side descending by order_id
+                allOrdersData.sort((a, b) => (b.order_id || 0) - (a.order_id || 0));
+                
+                currentOrdersPage = 1;
+                renderOrdersTable();
+            } catch (error) {
+                console.error("Error fetching orders:", error);
+                container.innerHTML = `<div style="padding: 40px; text-align: center; color: #FF453A; font-size: 13px;">Failed to load orders.</div>`;
+                paginationBar.style.display = 'none';
+            }
+        }
+
+        function renderOrdersTable() {
+            const container = document.getElementById('orders-table-container');
+            const paginationBar = document.getElementById('orders-pagination-bar');
+            
+            if (allOrdersData.length === 0) {
+                container.innerHTML = `<div style="padding: 40px; text-align: center; color: var(--text-secondary); font-size: 13px;">No orders found for this agent.</div>`;
+                paginationBar.style.display = 'none';
+                return;
+            }
+
+            const totalItems = allOrdersData.length;
+            const totalPages = Math.ceil(totalItems / ordersPerPage);
+            
+            if (currentOrdersPage > totalPages) currentOrdersPage = totalPages;
+            if (currentOrdersPage < 1) currentOrdersPage = 1;
+
+            const startIndex = (currentOrdersPage - 1) * ordersPerPage;
+            const endIndex = Math.min(startIndex + ordersPerPage, totalItems);
+            const pageData = allOrdersData.slice(startIndex, endIndex);
+
+            let html = `
+                <table class="agent-table">
+                    <thead>
+                        <tr>
+                            <th width="8%">Order ID</th>
+                            <th width="16%">Created At</th>
+                            <th width="12%">Contact No.</th>
+                            <th width="12%">Delivery Date</th>
+                            <th width="26%">Delivery Address</th>
+                            <th width="26%">Order Details</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            const escapeHTML = (str) => {
+                if (!str) return '';
+                return String(str).replace(/[&<>'"]/g, tag => ({
+                    '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+                }[tag]));
+            };
+
+            pageData.forEach(order => {
+                const details = order.order_details || {};
+                
+                // Format the created_at timestamp nicely
+                let createdAtFormatted = 'N/A';
+                if (order.created_at) {
+                    try {
+                        // Check if it's a Firestore Timestamp (has toDate method) or a normal string
+                        const dateObj = typeof order.created_at.toDate === 'function' 
+                            ? order.created_at.toDate() 
+                            : new Date(order.created_at);
+                            
+                        createdAtFormatted = dateObj.toLocaleString([], { 
+                            month: 'short', day: 'numeric', 
+                            hour: '2-digit', minute: '2-digit' 
+                        });
+                    } catch (e) {
+                        createdAtFormatted = escapeHTML(String(order.created_at));
+                    }
+                }
+
+                html += `
+                    <tr>
+                        <td style="font-weight:700; color:var(--text-primary);">#${order.order_id || 'N/A'}</td>
+                        <td style="font-size:12px; color:var(--text-secondary);">${createdAtFormatted}</td>
+                        <td><code style="color:var(--apple-green); font-size:11px; background:rgba(255,255,255,0.1); padding:2px 4px; border-radius:4px;">${escapeHTML(order.contact_number)}</code></td>
+                        <td style="font-size:12px; color:var(--text-secondary);">${escapeHTML(details.delivery_date)}</td>
+                        <td>
+                            <div class="truncate-box">${escapeHTML(details.delivery_address)}</div>
+                            <button class="table-expand-btn view-expand-btn" data-type="Address Details" data-content="${escapeHTML(details.delivery_address)}" title="Expand Address">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path stroke-linecap="round" stroke-linejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" /></svg>
+                            </button>
+                        </td>
+                        <td>
+                            <div class="truncate-box">${escapeHTML(details.full_order_details)}</div>
+                            <button class="table-expand-btn view-expand-btn" data-type="Order Details" data-content="${escapeHTML(details.full_order_details)}" title="Expand Details">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path stroke-linecap="round" stroke-linejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" /></svg>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            html += `</tbody></table>`;
+            container.innerHTML = html;
+
+            document.getElementById('orders-page-start').textContent = startIndex + 1;
+            document.getElementById('orders-page-end').textContent = endIndex;
+            document.getElementById('orders-page-total').textContent = totalItems;
+            
+            const prevBtn = document.getElementById('orders-page-prev');
+            const nextBtn = document.getElementById('orders-page-next');
+            
+            prevBtn.disabled = currentOrdersPage === 1;
+            nextBtn.disabled = currentOrdersPage === totalPages;
+            
+            prevBtn.style.opacity = prevBtn.disabled ? '0.3' : '1';
+            nextBtn.style.opacity = nextBtn.disabled ? '0.3' : '1';
+            
+            paginationBar.style.display = 'flex';
         }
 
         // --- NEW: FETCH AGENTS FROM FIRESTORE ---
@@ -1216,13 +1406,20 @@
                     return;
                 }
 
+                let firstAgent = null;
                 // Populate the dropdown
                 querySnapshot.forEach((doc) => {
                     const option = document.createElement('option');
                     option.value = doc.id;
                     option.text = doc.id; // Or you could use doc.data().agentName if it's different
                     agentSelect.appendChild(option);
+                    if (!firstAgent) firstAgent = doc.id;
                 });
+
+                // Load orders for the first agent on initial load
+                if (firstAgent) {
+                    loadOrdersForAgent(firstAgent);
+                }
 
             } catch (error) {
                 console.error("Error fetching agents:", error);
@@ -1248,6 +1445,59 @@
                 switchEl.addEventListener('click', () => {
                     switchEl.classList.toggle('active');
                 });
+            });
+
+            // Handle Agent Selection Change
+            const agentSelect = document.getElementById('agent-select');
+            if (agentSelect) {
+                agentSelect.addEventListener('change', (e) => {
+                    loadOrdersForAgent(e.target.value);
+                });
+            }
+
+            // Orders Pagination Bindings
+            document.getElementById('orders-page-prev')?.addEventListener('click', () => {
+                if (currentOrdersPage > 1) {
+                    currentOrdersPage--;
+                    renderOrdersTable();
+                }
+            });
+            
+            document.getElementById('orders-page-next')?.addEventListener('click', () => {
+                const totalPages = Math.ceil(allOrdersData.length / ordersPerPage);
+                if (currentOrdersPage < totalPages) {
+                    currentOrdersPage++;
+                    renderOrdersTable();
+                }
+            });
+
+            // Expand Content Bindings (Event Delegation)
+            document.getElementById('orders-table-container')?.addEventListener('click', (e) => {
+                const expandBtn = e.target.closest('.view-expand-btn');
+                if (expandBtn) {
+                    const title = expandBtn.getAttribute('data-type');
+                    const content = expandBtn.getAttribute('data-content');
+                    
+                    document.getElementById('focus-title').textContent = title;
+                    document.getElementById('focus-textarea').value = content;
+                    
+                    const overlay = document.getElementById('focus-overlay');
+                    overlay.style.display = 'flex';
+                    setTimeout(() => overlay.classList.add('active'), 10);
+                }
+            });
+
+            // Focus Overlay Closing
+            document.getElementById('focus-close-btn')?.addEventListener('click', () => {
+                const overlay = document.getElementById('focus-overlay');
+                overlay.classList.remove('active');
+                setTimeout(() => overlay.style.display = 'none', 300);
+            });
+            
+            document.getElementById('focus-overlay')?.addEventListener('click', (e) => {
+                if (e.target.id === 'focus-overlay') {
+                    document.getElementById('focus-close-btn').click();
+                }
             });
 
             // Trigger the agent load when the page is ready
