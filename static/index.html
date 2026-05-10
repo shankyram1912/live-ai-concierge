@@ -1306,11 +1306,12 @@
                     <thead>
                         <tr>
                             <th width="8%">Order ID</th>
-                            <th width="16%">Created At</th>
+                            <th width="14%">Created At</th>
                             <th width="12%">Contact No.</th>
+                            <th width="10%">Status</th>
                             <th width="12%">Delivery Date</th>
-                            <th width="26%">Delivery Address</th>
-                            <th width="26%">Order Details</th>
+                            <th width="22%">Delivery Address</th>
+                            <th width="22%">Order Details</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -1343,12 +1344,16 @@
                         createdAtFormatted = escapeHTML(String(order.created_at));
                     }
                 }
+                
+                // Get the order status, defaulting to 'Pending' if the field is missing
+                const orderStatus = order.order_status || 'Pending';
 
                 html += `
                     <tr>
                         <td style="font-weight:700; color:var(--text-primary);">#${order.order_id || 'N/A'}</td>
                         <td style="font-size:12px; color:var(--text-secondary);">${createdAtFormatted}</td>
                         <td><code style="color:var(--apple-green); font-size:11px; background:rgba(255,255,255,0.1); padding:2px 4px; border-radius:4px;">${escapeHTML(order.contact_number)}</code></td>
+                        <td><span style="font-size:11px; font-weight:700; color:var(--apple-blue); background:var(--apple-blue-bg); padding:3px 6px; border-radius:6px; letter-spacing:0.5px; text-transform:uppercase;">${escapeHTML(orderStatus)}</span></td>
                         <td style="font-size:12px; color:var(--text-secondary);">${escapeHTML(details.delivery_date)}</td>
                         <td>
                             <div class="truncate-box">${escapeHTML(details.delivery_address)}</div>
