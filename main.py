@@ -16,6 +16,8 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi import HTTPException
+from fastapi.concurrency import run_in_threadpool
 
 from google.adk.agents.live_request_queue import LiveRequestQueue
 from google.adk.agents.run_config import RunConfig, StreamingMode
@@ -86,6 +88,29 @@ async def root():
 async def root():
     """Serve the initialize.html page."""
     return FileResponse(Path(__file__).parent / "static" / "initialize.html", headers=NO_CACHE_HEADERS)
+
+@app.post("/live-ai-concierge/initialize/saveagent/{agent_name}")
+async def save_agent(agent_name: str):
+    """
+    Accepts an agent name as a path parameter, triggers the knowledge 
+    processing pipeline, and returns a 200 OK status on success.
+    """
+    logger.info(f"Received request to process knowledge for agent: {agent_name}")
+    
+    try:
+        await run_in_threadpool(
+            agent_knowledge.process_agent_knowledge, 
+            agent_name
+        )
+        
+        return {
+            "status": "success", 
+            "message": f"Knowledge successfully processed and saved for {agent_name}."
+        }
+        
+    except Exception as e:
+        logger.error(f"Failed to process knowledge for {agent_name}: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 # ========================================
 # WebSocket Endpoint

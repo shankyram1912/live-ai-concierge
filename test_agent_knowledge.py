@@ -42,7 +42,7 @@ if __name__ == "__main__":
         markdown_result = agent_knowledge.process_agent_knowledge(test_agent)
         
         print("\n" + "="*60)
-        print("SUCCESS! Extracted Markdown Preview (First 500 chars):")
+        print("SUCCESS! Extracted Markdown :")
         print("="*60)
         
         # Print a preview of the markdown to verify it worked without flooding the console
