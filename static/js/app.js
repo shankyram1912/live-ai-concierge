@@ -235,16 +235,6 @@ async function connectWebsocket() {
             return; // Fail gracefully
         }
 
-        // // 1. Handle custom wrapper messages from backend
-        // if (adkEvent.type === "transcript") {
-        //     if (adkEvent.role === "user") {
-        //         transcriptUser.innerText = `"${adkEvent.text}"`;
-        //     } else if (adkEvent.role === "ai") {
-        //         transcriptAi.innerText = adkEvent.text;
-        //     }
-        //     return; // Safe to return here because custom messages don't contain audio or ADK state flags
-        // }
-
         // ==========================================
         // EXTRACT DATA FIRST
         // ==========================================
@@ -314,58 +304,6 @@ async function connectWebsocket() {
                     // Log tool call requests
                     if (logTools.includes(part.functionResponse.name)) {
                         window.logToolUse(part.functionResponse.name, false, part.functionResponse.response || {});
-                    }
-
-                    // Define your active smart home tools for display update
-                    const smartHomeTools = [
-                        "control_airconditioner",
-                        "control_camera",
-                        "control_light",
-                        "control_lock"
-                    ];
-
-                    // 4. If the response matches one of our device tools, trigger the UI
-                    if (smartHomeTools.includes(part.functionResponse.name)) {
-                        
-                        // Extract the inner response payload
-                        const deviceData = part.functionResponse.response;
-                        
-                        console.log(`✅ Device Event [${part.functionResponse.name}] Detected:`, deviceData);
-                        
-                        // 5. Fire the Dynamic Hero Stack animation!
-                        // We check if it exists on the window object just to be safe
-                        if (typeof window.addDynamicHeroAction === 'function') {
-                            
-                            // Base delay of 600ms (to allow audio catch up) + 300ms for each subsequent item
-                            const baseDelay = 600;
-
-                            // Stagger the animation using the loop index. 
-                            setTimeout(() => {
-                                window.addDynamicHeroAction(deviceData);
-                            }, baseDelay + index * 300);
-                            
-                        } else {
-                            console.warn("addDynamicHeroAction is not defined on the window object.");
-                        }
-                    }
-                    // Catch the check_camera array response
-                    else if (part.functionResponse.name === "check_camera") {
-                        const payload = part.functionResponse.response;
-                        console.log(`📹 Camera Check Event Detected:`, payload);
-                        
-                        if (typeof window.showCameraModal === 'function') {
-                            // Trigger the new carousel modal we just built
-
-                            // Base delay of 600ms (to allow audio catch up) 
-                            const baseDelay = 600;
-
-                            setTimeout(() => {
-                                window.showCameraModal(payload);
-                            }, baseDelay);                            
-                            
-                        } else {
-                            console.warn("showCameraModal is not defined on the window object.");
-                        }
                     }
                 }
             });
@@ -489,4 +427,4 @@ if (orbButton) {
 }
 if (endBtn) {
     endBtn.addEventListener('click', endSession);
-}    
+}
