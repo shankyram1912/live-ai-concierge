@@ -11,6 +11,7 @@ from google.genai import types
 from dotenv import load_dotenv
 import config
 import warnings
+import os
 
 # Configure logging
 logging.basicConfig(
