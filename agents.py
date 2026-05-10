@@ -32,6 +32,7 @@ db = get_firestore_client()
 BASE_TOOLS_AND_RULES = """
     1. STRICTLY ANSWER BASED ON THE KNOWLEDGE BASE. DO NOT MAKE UP FACTS OUTSIDE OF IT. IF YOU DO NOT HAVE THE ANSWER, STATE APPROPRIATELY
     2. ONLY ADDRESS QUESTIONS RELATED TO THE CUSTOMER CONTEXT
+    3. ALWAYS ENSURE finalize_order TOOL IS INVOKED BEFORE CONFIRMING ORDER FINALIZATION TO CUSTOMER
 
 <tools>
 You have multiple tools to manage customer orders. Each tool interacts directly with the live database, ensuring the information is always the current truth.
