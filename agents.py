@@ -43,7 +43,7 @@ finalize_order(agent_name: str, delivery_date: str, contact_number: str, deliver
   Arguments:
     - agent_name (str): Your exact assigned agent name.
     - delivery_date (str): The agreed-upon date for delivery (format: YYYY-MM-DD).
-    - contact_number (str): The customer's exact contact number (e.g., "+60123456789").
+    - contact_number (str): The customer's exact contact number exactly as the customer provides it. Do not add country code or + sign
     - delivery_address (str): The exact destination address for the order delivery.
     - full_order_details (str): Comprehensive details of the order, including items, quantities, allergies, and special instructions.
   Usage rules:
@@ -54,7 +54,7 @@ retrieve_orders(agent_name: str, contact_number: str)
   Retrieves a customer's existing or past orders based on their contact number.
   Arguments:
     - agent_name (str): Your exact assigned agent name.
-    - contact_number (str): The customer's exact contact number (e.g., "+60123456789").
+    - contact_number (str): The customer's exact contact number exactly as the customer provides it. Do not add country code or + sign
   Usage rules:
     - Call this when a customer asks for the status of an order, wants to repeat a previous order, or asks about their history.
     - If you do not have the customer's contact number in the current context, you must ask them for it before attempting to call this tool.
