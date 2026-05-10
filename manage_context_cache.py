@@ -16,7 +16,6 @@ logger = logging.getLogger(__name__)
 
 # Configurations
 PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT")
-LOCATION = os.getenv("GOOGLE_CLOUD_LOCATION")
 DATABASE_ID = os.getenv("GOOGLE_CLOUD_FIRESTORE")
 
 MIME_TYPE_MAPPING = {
@@ -36,11 +35,7 @@ def get_firestore_client():
 def get_genai_client():
     """Initializes the Google GenAI client natively for Vertex AI."""
     # Relies entirely on the VM's Application Default Credentials (ADC)
-    return genai.Client(
-        vertexai=True,
-        project=PROJECT_ID,
-        location=LOCATION
-    )
+    return genai.Client()
 
 def _get_mime_type(gs_path: str) -> str:
     """Validates and infers the MIME type directly from the Cloud Storage URI."""
@@ -73,6 +68,9 @@ def build_agent_cache(agent_name: str, gs_path: str, purpose: str, instructions:
     
     logger.info(f"[{agent_name}] Creating Context Cache on Vertex AI...")
     
+    # Create a timezone-aware datetime for Dec 31, 2050
+    cache_expiration = datetime.datetime(2050, 12, 31, 23, 59, 59, tzinfo=datetime.timezone.utc)
+    
     # Context Caching uses specific models (like gemini-3-flash-preview)
     cached_content = client.caches.create(
         model=config.SUBAGENT_MODEL,
@@ -80,30 +78,12 @@ def build_agent_cache(agent_name: str, gs_path: str, purpose: str, instructions:
             contents=[document_part],
             system_instruction=full_system_instruction,
             display_name=agent_name,
-            ttl="86400s" # Cache lives for 24 hours (86400 seconds)
+            expire_time=cache_expiration
         )
     )
     
-    logger.info(f"[{agent_name}] Cache created successfully: {cached_content.name}")
+    logger.info(f"[{agent_name}] Cache created successfully: {cached_content.name}, expiring at {cached_content.expire_time}.")
     return cached_content
-
-def extend_agent_cache_ttl(agent_name: str, new_ttl: str = "86400s"):
-    """
-    Updates an existing Context Cache to extend its Time-To-Live (TTL).
-    Note: You cannot update the *content* of a cache, only its expiration.
-    """
-    client = get_genai_client()
-    for cache in client.caches.list():
-        if cache.display_name == agent_name:
-            logger.info(f"[{agent_name}] Extending cache TTL for '{cache.name}'...")
-            client.caches.update(
-                name=cache.name,
-                config=types.UpdateCachedContentConfig(ttl=new_ttl)
-            )
-            logger.info(f"[{agent_name}] TTL extended to {new_ttl}.")
-            return
-            
-    logger.info(f"[{agent_name}] No existing cache found to extend.")
 
 # ----------------------------------------------------------------------------
 # Main Orchestration Methods
@@ -166,3 +146,18 @@ def delete_agent_cache(agent_name: str):
             logger.info(f"[{agent_name}] Found existing cache '{cache.name}'. Deleting...")
             client.caches.delete(name=cache.name)
             logger.info(f"[{agent_name}] Successfully deleted old cache.")
+            
+def check_agent_cache(agent_name: str) -> bool:
+    """Checks if a Context Cache exists for the agent."""
+    client = get_genai_client()
+    
+    logger.info(f"[{agent_name}] Checking for existing Context Caches...")
+    
+    # List caches and return True if a match is found
+    for cache in client.caches.list():
+        if cache.display_name == agent_name:
+            logger.info(f"[{agent_name}] Found existing cache '{cache.name}'.")
+            return True
+            
+    logger.info(f"[{agent_name}] No existing cache found.")
+    return False            

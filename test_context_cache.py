@@ -27,17 +27,9 @@ warnings.filterwarnings("ignore", category=UserWarning, module="pydantic")
 # Load environment variables first
 load_dotenv(override=True)
 
-# Configurations
-PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT")
-LOCATION = os.getenv("GOOGLE_CLOUD_LOCATION")
-
 def get_genai_client():
     """Initializes the Google GenAI client natively for Vertex AI."""
-    return genai.Client(
-        vertexai=True,
-        project=PROJECT_ID,
-        location=LOCATION
-    )
+    return genai.Client()
 
 def ask_agent_with_cache(agent_name: str, question: str) -> str:
     """
@@ -46,16 +38,8 @@ def ask_agent_with_cache(agent_name: str, question: str) -> str:
     client = get_genai_client()
     
     logger.info(f"[{agent_name}] Looking for active context cache...")
-    active_cache_name = None
-    
-    # Iterate through existing caches to find the one matching the agent's name
-    for cache in client.caches.list():
-        if cache.display_name == agent_name:
-            active_cache_name = cache.name
-            logger.info(f"[{agent_name}] Found active cache: {active_cache_name}")
-            break
             
-    if not active_cache_name:
+    if not manage_context_cache.check_agent_cache(agent_name):
         logger.info(f"No active context cache found for agent '{agent_name}'. Please run create_agent_cache() first.")
         manage_context_cache.create_agent_cache(agent_name)
         
