@@ -855,6 +855,21 @@
         .table-expand-btn { background: transparent; border: none; color: var(--apple-blue); cursor: pointer; padding: 4px 0 0; display: inline-flex; align-items: center; transition: all 0.2s; border-radius: 4px; }
         .table-expand-btn:hover { color: #fff; }
 
+        /* --- DYNAMIC TABLE STATUS BADGES --- */
+        .badge-table {
+            font-size: 11px; 
+            font-weight: 700; 
+            padding: 3px 6px; 
+            border-radius: 6px; 
+            letter-spacing: 0.5px; 
+            text-transform: uppercase;
+            display: inline-block;
+        }
+        .badge-pending   { color: #FFFFFF; background: rgba(255, 255, 255, 0.15); }
+        .badge-accepted  { color: var(--apple-blue); background: var(--apple-blue-bg); }
+        .badge-delivered { color: var(--apple-green); background: rgba(48, 209, 88, 0.15); }
+        .badge-cancelled { color: var(--apple-red); background: rgba(255, 69, 58, 0.15); }        
+
         /* ANIMATIONS */
         @keyframes breathe {
             0%, 100% { transform: scale(1); box-shadow: inset 0 10px 20px rgba(255, 255, 255, 0.4), 0 0 20px rgba(151, 8, 204, 0.2); }
@@ -1345,14 +1360,25 @@
                     }
                 }
                 
-                // Get the order status, defaulting to 'Pending' if the field is missing
-                const orderStatus = order.order_status || 'Pending';
+                // --- Dynamic Status Colors ---
+                const orderStatus = order.order_status || 'PENDING QUOTE';
+                const statusUpper = orderStatus.toUpperCase();
+                let statusClass = 'badge-pending'; // Default to White
+                
+                if (statusUpper.includes('ACCEPTED') || statusUpper.includes('CONFIRM')) {
+                    statusClass = 'badge-accepted'; // Blue
+                } else if (statusUpper.includes('DELIVERED')) {
+                    statusClass = 'badge-delivered'; // Green
+                } else if (statusUpper.includes('CANCELLED')) {
+                    statusClass = 'badge-cancelled'; // Red
+                }
+                // ----------------------------------
 
                 html += `
                     <tr>
                         <td style="font-weight:700; color:var(--text-primary);">#${order.order_id || 'N/A'}</td>
                         <td style="font-size:12px; color:var(--text-secondary);">${createdAtFormatted}</td>
-                        <td><code style="color:var(--apple-green); font-size:11px; background:rgba(255,255,255,0.1); padding:2px 4px; border-radius:4px;">${escapeHTML(order.contact_number)}</code></td>
+                        <td><span class="badge-table ${statusClass}">${escapeHTML(orderStatus)}</span></td>
                         <td><span style="font-size:11px; font-weight:700; color:var(--apple-blue); background:var(--apple-blue-bg); padding:3px 6px; border-radius:6px; letter-spacing:0.5px; text-transform:uppercase;">${escapeHTML(orderStatus)}</span></td>
                         <td style="font-size:12px; color:var(--text-secondary);">${escapeHTML(details.delivery_date)}</td>
                         <td>
