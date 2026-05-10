@@ -286,12 +286,8 @@ async function connectWebsocket() {
                 if (part.functionCall) {
                     // Define tools for logging
                     const logTools = [
-                        "get_smart_home_devices_info",
-                        "check_camera",
-                        "control_airconditioner",
-                        "control_camera",
-                        "control_light",
-                        "control_lock"                        
+                        "finalize_order",
+                        "retrieve_orders"                      
                     ];
                     // Log tool call requests
                     if (logTools.includes(part.functionCall.name)) {
@@ -305,12 +301,8 @@ async function connectWebsocket() {
                     
                     // Define tools for logging
                     const logTools = [
-                        "get_smart_home_devices_info",
-                        "check_camera",
-                        "control_airconditioner",
-                        "control_camera",
-                        "control_light",
-                        "control_lock"                        
+                        "finalize_order",
+                        "retrieve_orders"                         
                     ];
                     // Log tool call requests
                     if (logTools.includes(part.functionResponse.name)) {
