@@ -48,6 +48,7 @@ def get_concierge_agent(agent_name: str) -> LlmAgent:
     data = doc.to_dict()
     purpose = data.get("purpose", "")
     instructions = data.get("customerHandlingInstructions", "")
+    knowledge_base = data.get("knowledgeBase", "")
 
     # Construct the final dynamic instruction string
     dynamic_instruction = f"""
@@ -58,6 +59,10 @@ def get_concierge_agent(agent_name: str) -> LlmAgent:
       <customer_handling_instructions>
       {instructions}
       </customer_handling_instructions>
+      
+      <knowledge_base>
+      {knowledge_base}
+      </knowledge_base>      
 
     {BASE_TOOLS_AND_RULES}
     """
