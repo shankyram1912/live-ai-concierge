@@ -24,7 +24,6 @@ load_dotenv(override=True)
 # Configurations
 PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT")
 DATABASE_ID = os.getenv("GOOGLE_CLOUD_FIRESTORE")
-MODEL_LOCATION = os.getenv("GOOGLE_CLOUD_LOCATION_GLOBAL")
 
 MIME_TYPE_MAPPING = {
     ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -42,7 +41,7 @@ def get_firestore_client():
 
 def get_genai_client():
     """Initializes the Google GenAI client natively for Vertex AI."""
-    return genai.Client(location=MODEL_LOCATION)
+    return genai.Client(location=config.agent_config.SUBAGENT_PRO_CLOUD_LOCATION)
 
 def _get_mime_type(gs_path: str) -> str:
     """Validates and infers the MIME type directly from the Cloud Storage URI."""
@@ -102,7 +101,7 @@ def process_agent_knowledge(agent_name: str) -> str:
     
     try:
         response = client.models.generate_content(
-            model=config.SUBAGENT_PRO_MODEL,
+            model=config.agent_config.SUBAGENT_PRO_MODEL,
             contents=[document_part, extraction_prompt],
             config=types.GenerateContentConfig(
                 temperature=0.1 # Lower temperature for more factual, verbatim extraction

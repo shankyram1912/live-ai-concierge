@@ -14,7 +14,6 @@ logger = logging.getLogger(__name__)
 # Configurations
 PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT")
 DATABASE_ID = os.getenv("GOOGLE_CLOUD_FIRESTORE")
-MODEL_LOCATION = os.getenv("GOOGLE_CLOUD_LOCATION_GLOBAL")
 
 # ----------------------------------------------------------------------------
 # Initialization & Setup
@@ -114,7 +113,7 @@ def get_concierge_agent(agent_name: str) -> LlmAgent:
 
     return LlmAgent(
         name=agent_name,
-        model=config.ORCHESTRATOR_MODEL,
+        model=config.agent_config.ORCHESTRATOR_MODEL,
         instruction=dynamic_instruction,
         tools=[toolInstance.retrieve_orders, toolInstance.finalize_order]  # Wrapper tools for subagents can be added here
     )

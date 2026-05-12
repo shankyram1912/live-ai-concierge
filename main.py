@@ -7,7 +7,6 @@ import base64
 import json
 import time
 import warnings
-import config
 import uvicorn
 
 from typing import Optional
@@ -26,10 +25,6 @@ from google.adk.sessions import InMemorySessionService
 from google.genai import types
 from google.genai.types import ProactivityConfig
 
-# Import dynamic getter instead of static agent
-from agents import get_concierge_agent  
-import agent_knowledge
-
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -40,10 +35,17 @@ logger = logging.getLogger(__name__)
 # Suppress Pydantic serialization warnings
 warnings.filterwarnings("ignore", category=UserWarning, module="pydantic")
 
+# config imports are placed after logging configuration so loggers in AgentConfig can be captured
+import config
+from config import AgentConfig
+from agents import get_concierge_agent  
+import agent_knowledge
+
 # Load environment variables first
 load_dotenv(override=True)
 
 app_name = config.APP_NAME
+agent_config = config.agent_config
 
 app = FastAPI(title="Concierge AI Agent")
 session_service = InMemorySessionService()
@@ -161,23 +163,29 @@ async def websocket_endpoint(
 
     response_modalities = ["AUDIO"]
         
-    run_config = RunConfig(
-        streaming_mode=StreamingMode.BIDI,
-        response_modalities=response_modalities,
-        speech_config=types.SpeechConfig(
+    # 1. Define the base configuration arguments that apply to both Gemini and Vertex AI
+    run_config_kwargs = {
+        "streaming_mode": StreamingMode.BIDI,
+        "response_modalities": response_modalities,
+        "speech_config": types.SpeechConfig(
             voice_config=types.VoiceConfig(
                 prebuilt_voice_config=types.PrebuiltVoiceConfig(
                     voice_name=voice
                 )
             )
         ),            
-        input_audio_transcription=types.AudioTranscriptionConfig(),
-        output_audio_transcription=types.AudioTranscriptionConfig(),
-        # Note session resumption only works for Vertex AI, not Gemini API
-        session_resumption=types.SessionResumptionConfig(),
-        proactivity=ProactivityConfig(proactive_audio=proactive_audio),
-        enable_affective_dialog=affective_dialog
-    )
+        "input_audio_transcription": types.AudioTranscriptionConfig(),
+        "output_audio_transcription": types.AudioTranscriptionConfig(),
+    }
+
+    # 2. Conditionally inject features exclusive to the Vertex AI Live API
+    if agent_config.IS_VERTEX_AI_LIVE_API:
+        run_config_kwargs["session_resumption"] = types.SessionResumptionConfig()
+        run_config_kwargs["proactivity"] = ProactivityConfig(proactive_audio=proactive_audio)
+        run_config_kwargs["enable_affective_dialog"] = affective_dialog
+
+    # 3. Instantiate the RunConfig by unpacking the dictionary
+    run_config = RunConfig(**run_config_kwargs)
 
     live_request_queue = LiveRequestQueue()
 
@@ -249,29 +257,32 @@ async def websocket_endpoint(
             event_dict = json.loads(event_json)
             
             event_type = None
+            event_summary = None
             is_audio_stream = False
             
             if event.content and event.content.parts:
                 part = event.content.parts[0]
                 
                 if part.inline_data:
-                    event_type = f"AUDIO {part.inline_data.mime_type} Received {len(part.inline_data.data)} bytes"
+                    event_summary = f"AUDIO {part.inline_data.mime_type} Received {len(part.inline_data.data)} bytes"
                 elif part.text:
-                    event_type = f"TEXT {part.text} IS_PARTIAL {event.partial} TURN_COMPLETE {event.turn_complete}"
+                    event_summary = f"TEXT {part.text} IS_PARTIAL {event.partial} TURN_COMPLETE {event.turn_complete}"
                 for part in event.content.parts:
                     if part.function_call:
-                        event_type = f"MODEL FUNCTION CALL {part.function_call.name} INPUT PARAMS {part.function_call.args}"
+                        event_type = "function_call"
+                        event_summary = f"MODEL FUNCTION CALL {part.function_call.name} INPUT PARAMS {part.function_call.args}"
                     elif part.function_response:
-                        event_type = f"USER FUNCTION CALL RESPONSE {part.function_response.name} OUTPUT PARAMS {part.function_response.response}"                        
+                        event_type = "function_response"
+                        event_summary = f"USER FUNCTION CALL RESPONSE {part.function_response.name} OUTPUT PARAMS {part.function_response.response}"                        
                     
             if event.input_transcription:
-                event_type = f"🗣️ USER TALKING: {event.input_transcription.text} IS_FINISHED {event.input_transcription.finished} IS_PARTIAL {event.partial} TURN_COMPLETE {event.turn_complete}"                        
+                event_summary = f"🗣️ USER TALKING: {event.input_transcription.text} IS_FINISHED {event.input_transcription.finished} IS_PARTIAL {event.partial} TURN_COMPLETE {event.turn_complete}"                        
             elif event.output_transcription:
-                event_type = f"🤖 AI AGENT TALKING: {event.output_transcription.text} IS_FINISHED {event.output_transcription.finished} IS_PARTIAL {event.partial} TURN_COMPLETE {event.turn_complete}"                        
+                event_summary = f"🤖 AI AGENT TALKING: {event.output_transcription.text} IS_FINISHED {event.output_transcription.finished} IS_PARTIAL {event.partial} TURN_COMPLETE {event.turn_complete}"                        
                 
             # Uncomment for event logging
-            #if event_type:
-            #    print(f"++ {event_type}", flush=True)
+            #if event_summary:
+            #    print(f"++ {event_summary}", flush=True)
             # else:
             #     print(f"xx UNTAGGED EVENT {event_dict}", flush=True)
             
@@ -293,11 +304,12 @@ async def websocket_endpoint(
                         if hasattr(part.inline_data, 'data') and part.inline_data.data:
                             logger.debug(f"### SENDING AUDIO RESPONSE TO FRONTEND")                                
                             await websocket.send_bytes(part.inline_data.data)
-                else:                
-                    logger.info(f"### RESPONSE TO FRONTEND - {event_json}")
+                else:
+                    if(event_type in ("function_call", "function_response")):                
+                        logger.info(f"### RESPONSE TO FRONTEND - {event_json}")
                     await websocket.send_text(event_json)                    
             else:                
-                logger.info(f"### RESPONSE TO FRONTEND - {event_json}")
+                # logger.info(f"### RESPONSE TO FRONTEND - {event_json}")
                 await websocket.send_text(event_json)
 
     # ========================================
