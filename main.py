@@ -174,8 +174,8 @@ async def websocket_endpoint(
                 )
             )
         ),            
-        "input_audio_transcription": types.AudioTranscriptionConfig(),
-        "output_audio_transcription": types.AudioTranscriptionConfig(),
+        "input_audio_transcription": types.AudioTranscriptionConfig(language_codes=['en-US']),
+        "output_audio_transcription": types.AudioTranscriptionConfig(language_codes=['en-US']),
     }
 
     # 2. Conditionally inject features exclusive to the Vertex AI Live API
