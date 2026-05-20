@@ -40,6 +40,7 @@ import config
 from config import AgentConfig
 from agents import get_concierge_agent  
 import agent_knowledge
+from voiceconfig import VoiceConfig
 
 # Load environment variables first
 load_dotenv(override=True)
@@ -138,7 +139,7 @@ async def websocket_endpoint(
 
     # Fetch Agent Dynamically from Firestore (Run in Threadpool so we don't block the event loop)
     try:
-        agent = await run_in_threadpool(get_concierge_agent, agent_name)
+        agent = await run_in_threadpool(get_concierge_agent, agent_name, VoiceConfig.is_female(voice))
         logger.info(f"Successfully loaded agent profile for: {agent_name}")
     except Exception as e:
         logger.error(f"Failed to load agent '{agent_name}': {e}")
@@ -174,8 +175,8 @@ async def websocket_endpoint(
                 )
             )
         ),            
-        "input_audio_transcription": types.AudioTranscriptionConfig(language_codes=['en-US']),
-        "output_audio_transcription": types.AudioTranscriptionConfig(language_codes=['en-US']),
+        "input_audio_transcription": types.AudioTranscriptionConfig(language_codes=['en-US', 'th-TH']),
+        "output_audio_transcription": types.AudioTranscriptionConfig(language_codes=['en-US', 'th-TH']),
     }
 
     # 2. Conditionally inject features exclusive to the Vertex AI Live API
@@ -188,6 +189,12 @@ async def websocket_endpoint(
     run_config = RunConfig(**run_config_kwargs)
 
     live_request_queue = LiveRequestQueue()
+    
+    # Fix to optimize voice delivery
+    opening_system_direction = types.Content(
+        parts=[types.Part(text="Speak SLOWLY, use casual warm tone but SLOWLy. Dont respond to this message, wait for my next one.")]
+    )    
+    live_request_queue.send_content(opening_system_direction)
 
     # ========================================
     # Phase 3: Active Session Tasks

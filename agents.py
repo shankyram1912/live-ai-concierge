@@ -71,11 +71,29 @@ retrieve_orders(agent_name: str, contact_number: str)
 # ==========================================
 # Dynamic Agent Factory
 # ==========================================
-def get_concierge_agent(agent_name: str) -> LlmAgent:
+def get_concierge_agent(agent_name: str, is_female: bool) -> LlmAgent:
     """
     Fetches agent configuration from Firestore and dynamically builds 
     an LlmAgent with injected prompts. Raises an exception if the agent is not found.
     """
+    
+    if(is_female):          
+      speech_rules ="""
+      <speech_rules>
+      - If you are spoken to in Thai, always speak as a FEMALE Thai Voice in casual slow pace, using the right pronouns, particles and speaking notations
+      - Example: Always use the Thai polite particle 'ค่ะ' (Ka) at the end of sentences. Do not use 'ครับ' (Krap) since you are a female gender voice.
+      </speech_rules>      
+      """
+      logger.info(f"FEMALE Voice Agent configured.")
+    else:
+      speech_rules ="""
+      <speech_rules>
+      - If you are spoken to in Thai, always speak as a MALE Thai Voice in casual slow pace, using the right pronouns, particles and speaking notations
+      - Example: Always use the Thai polite particle 'ครับ' (Krap) at the end of sentences. Do not use 'ค่ะ' (Ka) since you are a male gender voice.
+      </speech_rules>      
+      """
+      logger.info(f"MALE Voice Agent configured.")     
+    
     # Fetch agent config from Firestore (exceptions here will intentionally bubble up)
     doc_ref = db.collection("ai-agents").document(agent_name)
     doc = doc_ref.get()
@@ -92,7 +110,11 @@ def get_concierge_agent(agent_name: str) -> LlmAgent:
     dynamic_instruction = f"""
       <agent_name>
       {agent_name}
-      </agent_name>    
+      </agent_name>
+      
+      <system_core_directive>
+      Always speak VERY SLOWLY in a CASUAL pace & warm tone.
+      </system_core_directive>      
     
       <purpose>
       {purpose}
