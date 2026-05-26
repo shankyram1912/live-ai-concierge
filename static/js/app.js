@@ -38,6 +38,11 @@ const previewContainer = document.getElementById('chat-preview-container');
 const previewList = document.getElementById('chat-preview-list');
 const clearAllBtn = document.getElementById('chat-preview-clear-all');
 
+// --- Decoupled Isolated Video Staging Configuration ---
+let localStreamMemory = null;
+let networkDeliveryInterval = null;
+let streamState = "none"; // none | webcam | screen
+
 // --- UI HELPERS ---
 
 /**
@@ -66,6 +71,8 @@ function updateConnectionStatus(connected) {
     // Re-query these elements here to ensure they aren't null
     const statusBadge = document.getElementById('socket-status');
     const endContainer = document.getElementById('end-btn-container');
+    // Fetch the dropdown wrapper element safely
+    const mediaSelectWrapper = document.querySelector('.media-select-wrapper');
 
     if (connected) {
         if (statusBadge) {
@@ -83,6 +90,9 @@ function updateConnectionStatus(connected) {
 
         // Show Chat
         if (chatContainer) chatContainer.classList.add('visible');
+
+        // Show the dropdown wrapper when connected
+        if (mediaSelectWrapper) mediaSelectWrapper.style.display = 'flex';
 
         transcriptUser.innerText = "";
         transcriptAi.innerText = "";
@@ -102,6 +112,9 @@ function updateConnectionStatus(connected) {
 
         // Hide Chat
         if (chatContainer) chatContainer.classList.remove('visible');
+
+        // Hide the dropdown wrapper when disconnected
+        if (mediaSelectWrapper) mediaSelectWrapper.style.display = 'none';
         
         transcriptUser.innerText = "Press connect, then speak...";
         transcriptAi.innerText = "";
@@ -371,6 +384,9 @@ async function connectWebsocket() {
         isConnected = false; // FIX: Allows the user to reconnect without refreshing!
         isConnecting = false;
         updateConnectionStatus(false);
+
+        // Instantly drops camera/screen sharing intervals and permissions
+        clearActiveVideoStreams();
         
         // Release hardware resources
         if (micStream) {
@@ -510,14 +526,13 @@ if (clearAllBtn) {
 
 // 5. Coordinated Multi-Payload Message Submitter Transmission Pipeline
 function sendChatMessage() {
-    const text = chatInput.value.trim();
+    let text = chatInput.value.trim();
     
     if (!text && pendingImages.length === 0) return;
 
-    // Check if WebSocket instance connection stream is explicitly live
     if (websocket && websocket.readyState === WebSocket.OPEN && isConnected) {
         
-        // Step A: Dispatch the entire multi-image cluster frame array payload first
+        // Step A: Send the images first
         if (pendingImages.length > 0) {
             websocket.send(JSON.stringify({
                 type: "multi-image",
@@ -527,23 +542,28 @@ function sendChatMessage() {
                 }))
             }));
             
+            // UI confirmation for the human user
             if (transcriptUser) {
                 transcriptUser.innerText = `[Sent ${pendingImages.length} Image Attachment(s)]`;
             }
+
+            // 💡 THE SILENT NUDGE: Append a hidden instruction to the text payload
+            const dynamicNudge = `[Image Input: Please review images immediately in context of query.]`;
+            text = text ? `${text}\n\n${dynamicNudge}` : dynamicNudge;
         }
 
-        // Step B: Send text context instruction data frame immediately after
-        if (text) {
-            websocket.send(JSON.stringify({
-                type: "text",
-                text: text
-            }));
-            if (transcriptUser) {
-                transcriptUser.innerText = `"${text}"`;
-            }
+        // Step B: Send the text payload (which now includes our silent nudge)
+        websocket.send(JSON.stringify({
+            type: "text",
+            text: text
+        }));
+
+        // If the user actually typed a message, display ONLY their message in the UI log
+        if (chatInput.value.trim() && transcriptUser) {
+            transcriptUser.innerText = `"${chatInput.value.trim()}"`;
         }
 
-        // Step C: Flush input elements and completely wipe staging variables clean
+        // Step C: Flush inputs and clear staging array
         chatInput.value = "";
         pendingImages = [];
         renderMultiPreview();
@@ -564,6 +584,178 @@ if (chatInput) {
         }
     };
 }
+
+// ==========================================
+// Isolated Media Viewfinder Logic Framework
+// ==========================================
+
+// Wrap structural HTML DOM assignments in DOMContentLoaded to prevent early loading null-pointer race conditions
+document.addEventListener('DOMContentLoaded', () => {
+    const mediaSelector = document.getElementById('live-media-selector');
+    const viewfinderWrapper = document.getElementById('video-viewfinder-wrapper');
+    const viewfinderVideo = document.getElementById('local-viewfinder-video');
+    const mediaStagingTitle = document.getElementById('media-staging-title');
+    const startNetworkBtn = document.getElementById('network-start-stream-btn');
+    const stopNetworkBtn = document.getElementById('network-stop-stream-btn');
+
+    if (mediaSelector) {
+        mediaSelector.addEventListener('change', async (e) => {
+            const choice = e.target.value;
+            
+            // Wipe active trackers on selector change modifications
+            clearActiveVideoStreams();
+
+            if (choice === "none") return;
+
+            try {
+                // Enforce select EXACTLY one layout context configuration at a time
+                if (choice === "webcam") {
+                    localStreamMemory = await navigator.mediaDevices.getUserMedia({
+                        video: { width: 640, height: 480, frameRate: 12 }, audio: false
+                    });
+                    if (mediaStagingTitle) mediaStagingTitle.textContent = "WEBCAM FEED";
+                } else if (choice === "screen") {
+                    localStreamMemory = await navigator.mediaDevices.getDisplayMedia({
+                        video: { width: 1024, height: 768, frameRate: 10 }
+                    });
+                    if (mediaStagingTitle) mediaStagingTitle.textContent = "SCREENSHARE FEED";
+                }
+
+                streamState = choice;
+
+                // Bind hardware track data loops straight into the local viewfinder box node
+                if (viewfinderVideo && localStreamMemory) {
+                    viewfinderVideo.srcObject = localStreamMemory;
+                    
+                    // 🎨 REFACTOR: Display the window as a floating panel without touching chat previews
+                    if (viewfinderWrapper) {
+                        viewfinderWrapper.style.display = 'flex';
+                        viewfinderWrapper.style.flexDirection = 'column';
+                    }
+                    
+                    if (startNetworkBtn) startNetworkBtn.style.display = 'block';
+                    if (stopNetworkBtn) stopNetworkBtn.style.display = 'none';
+                }
+
+                // Attach hardware termination listener context parameters
+                localStreamMemory.getVideoTracks()[0].onended = () => clearActiveVideoStreams();
+
+            } catch (err) {
+                console.error("Local hardware initialization failed: ", err);
+                clearActiveVideoStreams();
+            }
+        });
+    }
+
+    // Force drag vectors to listen to window movements right on load
+    if (typeof setupDraggableOverlay === 'function') {
+        setupDraggableOverlay();
+    }
+
+});
+
+/**
+ * High-Performance Decoupled Video Transmission Channel
+ * Optimized: Canvas allocated outside the interval loop to eliminate memory thrashing.
+ */
+function startLiveVideoTransmission() {
+    if (!localStreamMemory || streamState === "none" || networkDeliveryInterval) return;
+
+    const viewfinderVideo = document.getElementById('local-viewfinder-video');
+    const startNetworkBtn = document.getElementById('network-start-stream-btn');
+    const stopNetworkBtn = document.getElementById('network-stop-stream-btn');
+
+    // PERFORMANCE OPTIMIZATION: Allocated ONCE outside the interval loop.
+    // This stops the browser from constantly creating/destroying objects, dropping CPU load to near zero.
+    const canvasNode = document.createElement('canvas');
+    const canvasContext = canvasNode.getContext('2d');
+
+    // 1. Send the automated system context notification down the network pipe
+    if (websocket && websocket.readyState === WebSocket.OPEN && isConnected) {
+        const silentInstruction = streamState === "webcam"
+            ? "[CAM FEED INCOMING: The user has explicitly started streaming their live WEBCAM feed. Review these incoming real-time frames in the context of user query.]"
+            : "[SCREEN SHARE FEED INCOMING: The user has explicitly started streaming their live SCREEN SHARE view. Review these incoming real-time frames in the context of user query.]";
+
+        websocket.send(JSON.stringify({ type: "text", text: silentInstruction }));
+    }
+
+    // 2. High-Fidelity transmission loop reusing the external canvas node
+    networkDeliveryInterval = setInterval(() => {
+        if (!isConnected || !websocket || websocket.readyState !== WebSocket.OPEN) return;
+
+        if (viewfinderVideo && viewfinderVideo.readyState === viewfinderVideo.HAVE_ENOUGH_DATA) {
+            // Retain original layout resolution parameters
+            canvasNode.width = 480;
+            canvasNode.height = 360;
+            
+            // Clean the scratchpad canvas and paint the newest track frame over it
+            canvasContext.drawImage(viewfinderVideo, 0, 0, canvasNode.width, canvasNode.height);
+            
+            // TEXT/BARCODE UPGRADE: Quality factor pushed to 0.95 (95% raw detail retention)
+            // This eliminates fuzzy artifact rings, keeping characters sharp for Gemini's OCR engine.
+            const base64Frame = canvasNode.toDataURL('image/jpeg', 0.95).split(',')[1];
+
+            websocket.send(JSON.stringify({
+                type: "video",
+                mimeType: "image/jpeg",
+                data: base64Frame
+            }));
+
+            if (transcriptUser) {
+                transcriptUser.innerText = `[Live-Streaming ${streamState === "webcam" ? "Webcam" : "Screen"} to Agent...]`;
+            }
+        }
+    }, 750); // Clocked at your original 750ms interval runtime parameters
+
+    // 💡 FIXED: Access button visibility configurations via modern style parameters directly
+    if (startNetworkBtn) startNetworkBtn.style.setProperty('display', 'none', 'important');
+    if (stopNetworkBtn) stopNetworkBtn.style.setProperty('display', 'block', 'important');
+}
+
+/**
+ * Core Media Structural Tear-Down & Permission Clear Release Engine
+ */
+function clearActiveVideoStreams() {
+    if (networkDeliveryInterval) {
+        clearInterval(networkDeliveryInterval);
+        networkDeliveryInterval = null;
+    }
+    if (localStreamMemory) {
+        localStreamMemory.getTracks().forEach(track => track.stop());
+        localStreamMemory = null;
+    }
+
+    // Explicitly notify the model's context layer that the camera feed is completely dead
+    if (websocket && websocket.readyState === WebSocket.OPEN && isConnected) {
+        websocket.send(JSON.stringify({ 
+            type: "text", 
+            text: "[VIDEO FEED STOPPED: The user has stopped their video transmission. You can no longer see the user or their screen. Real-time visual data is no longer available.]" 
+        }));
+    }    
+    
+    streamState = "none";
+    
+    // Re-query targets dynamically to handle background onclose event execution loops safely
+    const mediaSelector = document.getElementById('live-media-selector');
+    const viewfinderWrapper = document.getElementById('video-viewfinder-wrapper');
+    const viewfinderVideo = document.getElementById('local-viewfinder-video');
+    
+    if (mediaSelector) mediaSelector.value = "none";
+    if (viewfinderVideo) viewfinderVideo.srcObject = null;
+    
+    // 🎨 REFACTOR: Hide the floating frame overlay completely on stream termination
+    if (viewfinderWrapper) {
+        viewfinderWrapper.style.display = 'none';
+    }
+    
+    if (transcriptUser && isConnected) {
+        transcriptUser.innerText = "[Video stream stopped]";
+    }
+}
+
+// Global scope bindings for your index.html onclick declarations
+window.startLiveVideoTransmission = startLiveVideoTransmission;
+window.clearActiveVideoStreams = clearActiveVideoStreams;
 
 // ==========================================
 // Session Termination Logic

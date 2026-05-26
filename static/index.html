@@ -310,24 +310,31 @@
         }       
 
         .premium-dropdown {
-            background: rgba(255, 255, 255, 0.08) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23A1A1A6' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") no-repeat right 10px center;
-            color: var(--text-primary);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 12px;
-            padding: 6px 30px 6px 12px; 
-            font-size: 11px;
-            font-weight: 800;
-            letter-spacing: 0.5px;
-            font-family: var(--font-family);
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            
+            background-color: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: var(--text-secondary);
+            font-weight: 600;
+            font-family: inherit;
             outline: none;
             cursor: pointer;
-            appearance: none;
-            -webkit-appearance: none;
             transition: all 0.2s ease;
-            box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.1);
-            max-width: 100%;
-            overflow: hidden;
-            text-overflow: ellipsis;            
+            
+            /* 💡 CHANGED: Explicit alignment sizing parameters added */
+            width: 124px;
+            height: 28px;
+            padding: 0 24px 0 10px;
+            font-size: 11px;
+            border-radius: 8px;
+            
+            /* Elegant Custom Minimal Downward SVG Arrow Vector Injection */
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.4)' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-size: 10px;
+            background-position: right 8px center; /* Pins dropdown arrow clean */
         }
 
         .premium-dropdown:hover {
@@ -731,15 +738,14 @@
                         0 1px 1px rgba(255, 255, 255, 0.08);
         }        
 
-        /* Update your .chat-input block to match this */
         .chat-input {
             width: 100%;
-            height: 100%;        /* 💡 CHANGE THIS from min-height to 100% height */
+            height: 100%;        
             background: transparent; 
             border: none; 
             
-            /* Perfected padding to keep text clear of the absolute positioned buttons */
-            padding: 20px 56px 64px 56px; 
+            /* 💡 Clear parameters for left attach icon, bottom-right arrow, and dropdown */
+            padding: 20px 110px 80px 56px; 
             
             color: #FFF;
             font-size: 14px; 
@@ -820,6 +826,170 @@
             width: 18px; 
             height: 18px; 
             stroke-width: 2.5px; 
+        }        
+
+        /* ==========================================================================
+        MEDIA STAGING & PREMIUM DROPDOWN LAYER
+        ========================================================================== */
+
+        /* Dropdown menu styling framework definitions */
+        #live-media-selector {
+            z-index: 10;
+            width: 140px;
+            height: 32px;
+            border-radius: 16px;
+            background-color: rgba(255, 255, 255, 0.07);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: -0.1px;
+            color: #fff;
+            padding: 0 28px 0 14px;
+            background-position: right 12px center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        /* Dropdown control wrapper layout zone */
+        .media-select-wrapper {
+            display: none;        /* 🔥 CHANGE: Hidden by default when disconnected */
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            height: 36px;         
+            margin: 16px 0 8px 0;   
+            z-index: 15;
+        }
+
+        /* Base staging preview bar rules */
+        #chat-preview-container {
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+
+        /* Wipes custom grey scrollbar blocks for horizontal multi-image uploads */
+        #chat-preview-list {
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        #chat-preview-list::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* 🖼️ HIGH REFACTOR: Draggable Window Container */
+        .floating-viewfinder-overlay {
+            position: absolute;
+            top: 100px;
+            left: 320px;
+            width: 260px;
+            background: rgba(20, 20, 22, 0.85);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 16px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255,255,255,0.2);
+            overflow: hidden;
+            z-index: 999;
+            display: none;
+            cursor: grab;
+            user-select: none;
+            animation: floating-appear 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        
+        .floating-viewfinder-overlay:active { cursor: grabbing; }
+
+        @keyframes floating-appear {
+            0% { transform: scale(0.9) translateY(10px); opacity: 0; }
+            100% { transform: scale(1) translateY(0); opacity: 1; }
+        }
+
+        .viewfinder-drag-bar {
+            height: 34px;
+            background: rgba(0, 0, 0, 0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .viewfinder-drag-title {
+            font-size: 9px;
+            font-weight: 800;
+            letter-spacing: 0.8px;
+            color: var(--apple-green);
+            text-transform: uppercase;
+        }
+
+        .viewfinder-close-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 16px;
+            cursor: pointer;
+            line-height: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            transition: all 0.15s;
+        }
+        .viewfinder-close-btn:hover { background: rgba(255,69,58,0.2); color: var(--apple-red); }
+
+        .viewfinder-video-box {
+            position: relative;
+            width: 100%;
+            height: 165px;
+            background: #000;
+        }
+        
+        #local-viewfinder-video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .viewfinder-action-row {
+            padding: 8px 10px;
+            background: rgba(0, 0, 0, 0.15);
+            display: flex;
+            justify-content: center;
+        }
+
+        /* Premium Custom Dropdown styling framework definitions */
+        .premium-dropdown {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            
+            background-color: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: var(--text-secondary);
+            font-weight: 600;
+            font-family: inherit;
+            outline: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            
+            /* Elegant Custom Minimal Downward SVG Arrow Vector Injection */
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.4)' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-size: 10px;
+        }
+
+        .premium-dropdown:hover {
+            background-color: rgba(255, 255, 255, 0.12);
+            border-color: rgba(255, 255, 255, 0.16);
+            color: var(--text-primary);
+        }
+
+        .premium-dropdown option {
+            background: #18181a; 
+            color: var(--text-primary);
+            font-size: 11px;
+            padding: 6px;
         }        
 
         /* --- RIGHT PANEL: DATA LAYER --- */
@@ -1185,9 +1355,17 @@
                 <div class="mic-instruction" id="mic-text">Tap to Connect</div>                           
             </div>
 
+            <div class="media-select-wrapper">
+                <select class="premium-dropdown" id="live-media-selector">
+                    <option value="none" selected>🎥 Stream Off</option>
+                    <option value="webcam">📷 Share Webcam</option>
+                    <option value="screen">🖥️ Share Screen</option>
+                </select>
+            </div>            
+
             <div class="chat-container" id="chat-container">
                 
-                <input type="file" id="chat-file-input" accept="image/*" style="display: none;" multiple/>
+                <input type="file" id="chat-file-input" accept="image/*" style="display: none;" />
                 
                 <div id="chat-preview-container" style="display: none; padding: 10px 14px; flex-direction: column; gap: 8px; border-bottom: 1px solid rgba(255,255,255,0.06); background: rgba(0,0,0,0.3); border-radius: 20px 20px 0 0;">
                     
@@ -1196,8 +1374,8 @@
                         <button id="chat-preview-clear-all" style="background: transparent; border: none; color: var(--text-tertiary); font-size: 10px; font-weight: 700; cursor: pointer; transition: color 0.2s;" onmouseover="this.style.color='#FF453A'" onmouseout="this.style.color='var(--text-tertiary)'">CLEAR ALL</button>
                     </div>
                     
-                    <div id="chat-preview-list" style="display: flex; gap: 12px; overflow-x: auto; padding: 4px 2px; scrollbar-width: none; -ms-overflow-style: none;">
-                        </div>
+                    <div id="chat-preview-list" style="display: flex; gap: 12px; overflow-x: auto; padding: 4px 2px; scrollbar-width: none; -ms-overflow-style: none;"></div>
+
                 </div>
 
                 <button class="chat-attach-btn" id="chat-attach-btn" title="Attach Image">
@@ -1207,7 +1385,7 @@
                 </button>
 
                 <textarea class="chat-input" id="chat-input" placeholder="Message Concierge AI..."></textarea>
-                
+
                 <button class="chat-send-btn" id="chat-send-btn" title="Send Message">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
                         <line x1="12" y1="19" x2="12" y2="5"></line>
@@ -1264,6 +1442,24 @@
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <div id="video-viewfinder-wrapper" class="floating-viewfinder-overlay">
+        <div class="viewfinder-drag-bar" id="viewfinder-drag-handle">
+            <span class="viewfinder-drag-title" id="media-staging-title">Staged Preview</span>
+            <button class="viewfinder-close-btn" onclick="window.clearActiveVideoStreams()">&times;</button>
+        </div>
+        <div class="viewfinder-video-box">
+            <video id="local-viewfinder-video" autoplay muted playsinline></video>
+        </div>
+        <div class="viewfinder-action-row">
+            <button id="network-start-stream-btn" onclick="window.startLiveVideoTransmission()" style="background: var(--apple-green); border: none; color: white; font-size: 11px; font-weight: 700; padding: 8px 16px; border-radius: 8px; cursor: pointer; box-shadow: 0 4px 10px rgba(48,209,88,0.3); width: 100%;">
+                🚀 Stream to Agent
+            </button>
+            <button id="network-stop-stream-btn" onclick="window.clearActiveVideoStreams()" style="display: none; background: rgba(255, 69, 58, 0.9); border: none; color: white; font-size: 11px; font-weight: 700; padding: 8px 16px; border-radius: 8px; cursor: pointer; box-shadow: 0 4px 10px rgba(255,69,58,0.3); width: 100%;">
+                🛑 Stop Stream
+            </button>
         </div>
     </div>
 
@@ -1521,6 +1717,44 @@
             }
         }
 
+        /** SETUP MOUSE DRAG LOGIC FOR OVERLAY */
+        function setupDraggableOverlay() {
+            const el = document.getElementById('video-viewfinder-wrapper');
+            const handle = document.getElementById('viewfinder-drag-handle');
+            if (!el || !handle) return;
+
+            let xOff = 0, yOff = 0, xStart = 0, yStart = 0;
+
+            handle.onmousedown = (e) => {
+                e.preventDefault();
+                // Capture initial cursor positions on downclick
+                xStart = e.clientX;
+                yStart = e.clientY;
+                
+                document.onmouseup = closeDragElement;
+                document.onmousemove = elementDrag;
+            };
+
+            function elementDrag(e) {
+                e.preventDefault();
+                // Compute positional shifts against previous tick array
+                xOff = xStart - e.clientX;
+                yOff = yStart - e.clientY;
+                xStart = e.clientX;
+                yStart = e.clientY;
+                
+                // Set the element's new layout style placement coordinates
+                el.style.top = (el.offsetTop - yOff) + "px";
+                el.style.left = (el.offsetLeft - xOff) + "px";
+            }
+
+            function closeDragElement() {
+                // Wipe trackers completely to drop performance drag lag
+                document.onmouseup = null;
+                document.onmousemove = null;
+            }
+        }
+
         // --- EXISTING: SETTINGS TOGGLE LOGIC ---
         document.addEventListener('DOMContentLoaded', () => {
             const settingsBtn = document.getElementById('settings-btn');
@@ -1596,6 +1830,11 @@
 
             // Trigger the agent load when the page is ready
             loadAgents();
+
+
+            // Fire the dragging vectors directly here in index.html!
+            // This bypasses the app.js ES module scope boundary.
+            setupDraggableOverlay();
         });
 
         window.setAgentState = function(state) {

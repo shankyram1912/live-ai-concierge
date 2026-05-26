@@ -192,7 +192,7 @@ async def websocket_endpoint(
     
     # Fix to optimize voice delivery
     opening_system_direction = types.Content(
-        parts=[types.Part(text="Speak SLOWLY, use casual warm tone but SLOWLy. Dont respond to this message, wait for my next one.")]
+        parts=[types.Part(text="System Instruction: Speak SLOWLY, use casual warm tone but SLOWLy. Dont respond to this message, wait for user input.")]
     )    
     live_request_queue.send_content(opening_system_direction)
 
@@ -221,15 +221,15 @@ async def websocket_endpoint(
                     live_request_queue.send_realtime(audio_blob)
 
                 elif "text" in message:
-                    json_message = json.loads(message["text"])
-                    
-                    logger.info(f"Frontend sent TEXT - {json_message}")
+                    json_message = json.loads(message["text"])                    
 
                     if json_message.get("type") == "text":
                         content = types.Content(
                             parts=[types.Part(text=json_message["text"])]
                         )
+                        logger.info(f"Frontend sent TEXT - {json_message}")
                         live_request_queue.send_content(content)
+                        
 
                     # elif json_message.get("type") == "image":
                     #     logger.info(f"Frontend sent IMAGE")
@@ -252,9 +252,25 @@ async def websocket_endpoint(
                                     mime_type=mime_type, data=image_data
                                 )
                                 live_request_queue.send_realtime(image_blob)
-                                logger.info(f"Successfully piped image chunk to Live Engine")
+                                logger.info(f"Frontend sent IMAGE...")
                             except Exception as e:
                                 logger.error(f"Failed to process individual image in array: {e}")
+                                
+                    # ==========================================================================
+                    # 💡 PROCESS REAL-TIME VIDEO STREAM FRAMES
+                    # ==========================================================================
+                    elif json_message.get("type") == "video":
+                        try:
+                            video_data = base64.b64decode(json_message["data"])
+                            mime_type = json_message.get("mimeType", "image/jpeg")
+                            video_blob = types.Blob(
+                                mime_type=mime_type, data=video_data
+                            )
+                            # Pipe the frame instantly into Gemini's multi-modal queue
+                            logger.info(f"Frontend sent VIDEO...")
+                            live_request_queue.send_realtime(video_blob)                        
+                        except Exception as e:
+                            logger.error(f"Failed to process streaming video frame: {e}")                                
                     
             except RuntimeError as e:
                 if "disconnect message" in str(e):
