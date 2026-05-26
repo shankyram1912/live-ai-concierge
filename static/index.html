@@ -1189,18 +1189,16 @@
                 
                 <input type="file" id="chat-file-input" accept="image/*" style="display: none;" multiple/>
                 
-                <div id="chat-preview-container" style="display: none; padding: 10px 14px; align-items: center; gap: 10px; border-bottom: 1px solid rgba(255,255,255,0.06); background: rgba(0,0,0,0.3); border-radius: 20px 20px 0 0;">
-                    <div style="position: relative; width: 42px; height: 42px; border-radius: 8px; overflow: hidden; border: 1px solid rgba(255,255,255,0.15); flex-shrink: 0;">
-                        <img id="chat-preview-image" src="" style="width: 100%; height: 100%; object-fit: cover;" />
-                    </div>
-                    <div style="display: flex; flex-direction: column; min-width: 0; flex-grow: 1;">
-                        <span id="chat-preview-filename" style="font-size: 12px; font-weight: 600; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></span>
-                        <span style="font-size: 10px; color: var(--apple-green); font-weight: 700;">READY TO SEND</span>
-                    </div>
-                    <button id="chat-preview-remove" style="background: rgba(255,255,255,0.08); border: none; color: var(--apple-red); width: 24px; height: 24px; border-radius: 50%; font-size: 16px; font-weight: bold; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: background 0.2s;" title="Remove image">
-                        &times;
-                    </button>
+            <div id="chat-preview-container" style="display: none; padding: 10px 14px; flex-direction: column; gap: 8px; border-bottom: 1px solid rgba(255,255,255,0.06); background: rgba(0,0,0,0.3); border-radius: 20px 20px 0 0;">
+                
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0 2px;">
+                    <span style="font-size: 10px; color: var(--apple-green); font-weight: 800; letter-spacing: 0.5px;">Preview</span>
+                    <button id="chat-preview-clear-all" style="background: transparent; border: none; color: var(--text-tertiary); font-size: 10px; font-weight: 700; cursor: pointer; transition: color 0.2s;" onmouseover="this.style.color='#FF453A'" onmouseout="this.style.color='var(--text-tertiary)'">CLEAR ALL</button>
                 </div>
+                
+                <div id="chat-preview-list" style="display: flex; gap: 12px; overflow-x: auto; padding: 4px 2px; scrollbar-width: none; -ms-overflow-style: none;">
+                    </div>
+            </div>
 
                 <button class="chat-attach-btn" id="chat-attach-btn" title="Attach Image">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">

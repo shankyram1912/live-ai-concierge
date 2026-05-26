@@ -35,9 +35,8 @@ const chatSendBtn = document.getElementById('chat-send-btn');
 const fileInput = document.getElementById('chat-file-input');
 const attachBtn = document.getElementById('chat-attach-btn');
 const previewContainer = document.getElementById('chat-preview-container');
-const previewImage = document.getElementById('chat-preview-image');
-const previewFilename = document.getElementById('chat-preview-filename');
-const previewRemove = document.getElementById('chat-preview-remove');
+const previewList = document.getElementById('chat-preview-list');
+const clearAllBtn = document.getElementById('chat-preview-clear-all');
 
 // --- UI HELPERS ---
 
@@ -396,12 +395,15 @@ async function connectWebsocket() {
 // ==========================================
 
 // Local tracking state for stage management
+// State tracking array for multi-file upload stages
 let pendingImages = [];
 
+// 1. Trigger OS File Selection Dialog Box
 if (attachBtn && fileInput) {
-    attachBtn.addEventListener('click', () => fileInput.click());
+    attachBtn.onclick = () => fileInput.click();
 }
 
+// 2. Intercept Chosen Files and Compile into Memory Cache Arrays
 if (fileInput) {
     fileInput.addEventListener('change', () => {
         const files = Array.from(fileInput.files);
@@ -415,7 +417,7 @@ if (fileInput) {
                 const dataUrl = event.target.result;
                 const base64Data = dataUrl.split(',')[1]; 
 
-                // Push item into the local tracking state arrays
+                // Push compiled metadata object into local array pipeline
                 pendingImages.push({
                     mimeType: file.type,
                     data: base64Data,
@@ -425,7 +427,7 @@ if (fileInput) {
 
                 processedCount++;
 
-                // Once all selected files are compiled in memory, update the preview bar
+                // Trigger DOM render engine only after all selected files are processed
                 if (processedCount === files.length) {
                     renderMultiPreview();
                 }
@@ -435,50 +437,88 @@ if (fileInput) {
     });
 }
 
-// Render dynamic text showing how many images are staged inside the capsule header
+// 3. Dynamic Multi-Thumbnail DOM Construction Engine
 function renderMultiPreview() {
+    if (!previewList || !previewContainer) return;
+    
+    // Reset layout slate completely to prevent duplication compounding
+    previewList.innerHTML = '';
+
+    // If queue is completely wiped out, hide container and exit early
     if (pendingImages.length === 0) {
-        if (previewContainer) previewContainer.style.display = 'none';
+        previewContainer.style.display = 'none';
+        if (fileInput) fileInput.value = '';
         return;
     }
 
-    // Show the thumbnail image of the first file in the array as the primary display
-    if (previewImage) previewImage.src = pendingImages[0].src;
-    
-    // Display summary context (e.g., "receipt.png (+2 other files)")
-    if (previewFilename) {
-        if (pendingImages.length === 1) {
-            previewFilename.textContent = pendingImages[0].name;
-        } else {
-            previewFilename.textContent = `${pendingImages[0].name} (+${pendingImages.length - 1} files)`;
-        }
-    }
+    // Build functional thumbnail card grids for each item currently held in state arrays
+    pendingImages.forEach((imgObj, index) => {
+        const itemWrapper = document.createElement('div');
+        itemWrapper.style.cssText = `
+            position: relative;
+            width: 48px;
+            height: 48px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            flex-shrink: 0;
+            background: rgba(0,0,0,0.4);
+        `;
 
-    if (previewContainer) previewContainer.style.display = 'flex';
+        itemWrapper.innerHTML = `
+            <img src="${imgObj.src}" style="width:100%; height:100%; object-fit:cover; border-radius:7px;" title="${imgObj.name}" />
+            <button class="remove-single-img" style="
+                position: absolute;
+                top: -6px;
+                right: -6px;
+                width: 16px;
+                height: 16px;
+                border-radius: 50%;
+                background: var(--apple-red);
+                color: white;
+                border: none;
+                font-size: 11px;
+                font-weight: bold;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            ">&times;</button>
+        `;
+
+        // Map individual inline image slicing deletion handler loops
+        itemWrapper.querySelector('.remove-single-img').onclick = (e) => {
+            e.stopPropagation();
+            pendingImages.splice(index, 1);
+            renderMultiPreview(); // Refresh interface rows dynamically
+        };
+
+        previewList.appendChild(itemWrapper);
+    });
+
+    // Animate display open
+    previewContainer.style.display = 'flex';
 }
 
-// Clear whole queue state if user discards the attachment badge
-if (previewRemove) {
-    previewRemove.addEventListener('click', (e) => {
+// 4. Global Structural Clear-All Functionality Hook
+if (clearAllBtn) {
+    clearAllBtn.onclick = (e) => {
         if (e) e.stopPropagation();
         pendingImages = [];
-        if (fileInput) fileInput.value = '';
-        if (previewContainer) previewContainer.style.display = 'none';
-        if (previewImage) previewImage.src = '';
-    });
+        renderMultiPreview();
+    };
 }
 
-/**
- * Coordinated Multi-Image Dispatch Engine
- */
+// 5. Coordinated Multi-Payload Message Submitter Transmission Pipeline
 function sendChatMessage() {
     const text = chatInput.value.trim();
     
     if (!text && pendingImages.length === 0) return;
 
+    // Check if WebSocket instance connection stream is explicitly live
     if (websocket && websocket.readyState === WebSocket.OPEN && isConnected) {
         
-        // Step A: Dispatch the entire compiled image stack down the socket pipe
+        // Step A: Dispatch the entire multi-image cluster frame array payload first
         if (pendingImages.length > 0) {
             websocket.send(JSON.stringify({
                 type: "multi-image",
@@ -489,11 +529,11 @@ function sendChatMessage() {
             }));
             
             if (transcriptUser) {
-                transcriptUser.innerText = `[Sent ${pendingImages.length} Image Attachments]`;
+                transcriptUser.innerText = `[Sent ${pendingImages.length} Image Attachment(s)]`;
             }
         }
 
-        // Step B: Send text context frames immediately after the images
+        // Step B: Send text context instruction data frame immediately after
         if (text) {
             websocket.send(JSON.stringify({
                 type: "text",
@@ -504,25 +544,26 @@ function sendChatMessage() {
             }
         }
 
-        // Step C: Clear variables and restore clean inputs
+        // Step C: Flush input elements and completely wipe staging variables clean
         chatInput.value = "";
-        if (previewRemove) previewRemove.click(); 
+        pendingImages = [];
+        renderMultiPreview();
     }
 }
 
-// Send on Button Click
+// 6. Bind New Unified Logic Framework back onto core event triggers
 if (chatSendBtn) {
-    chatSendBtn.onclick = sendChatMessage; 
+    chatSendBtn.onclick = sendChatMessage;
 }
 
-// Send on Enter Key (Allow Shift+Enter for new lines)
 if (chatInput) {
-    chatInput.addEventListener('keydown', (e) => {
+    // Prevent default enter behavior to prevent broken whitespace line breaks
+    chatInput.onkeydown = (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault(); 
             sendChatMessage();
         }
-    });
+    };
 }
 
 // ==========================================
