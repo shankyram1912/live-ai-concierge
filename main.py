@@ -231,14 +231,31 @@ async def websocket_endpoint(
                         )
                         live_request_queue.send_content(content)
 
-                    elif json_message.get("type") == "image":
-                        logger.info(f"Frontend sent IMAGE")
-                        image_data = base64.b64decode(json_message["data"])
-                        mime_type = json_message.get("mimeType", "image/jpeg")
-                        image_blob = types.Blob(
-                            mime_type=mime_type, data=image_data
-                        )
-                        live_request_queue.send_realtime(image_blob)
+                    # elif json_message.get("type") == "image":
+                    #     logger.info(f"Frontend sent IMAGE")
+                    #     image_data = base64.b64decode(json_message["data"])
+                    #     mime_type = json_message.get("mimeType", "image/jpeg")
+                    #     image_blob = types.Blob(
+                    #         mime_type=mime_type, data=image_data
+                    #     )
+                    #     live_request_queue.send_realtime(image_blob)
+                    
+                    elif json_message.get("type") == "multi-image":
+                        logger.info(f"Frontend sent MULTI-IMAGE upload layer")
+                        images_list = json_message.get("images", [])
+                        
+                        for img_item in images_list:
+                            try:
+                                image_data = base64.b64decode(img_item["data"])
+                                mime_type = img_item.get("mimeType", "image/jpeg")
+                                image_blob = types.Blob(
+                                    mime_type=mime_type, data=image_data
+                                )
+                                live_request_queue.send_realtime(image_blob)
+                                logger.info(f"Successfully piped image chunk to Live Engine")
+                            except Exception as e:
+                                logger.error(f"Failed to process individual image in array: {e}")
+                    
             except RuntimeError as e:
                 if "disconnect message" in str(e):
                     logger.info("Caught disconnect RuntimeError, stopping upstream task.")

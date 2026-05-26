@@ -31,6 +31,14 @@ const chatContainer = document.getElementById('chat-container');
 const chatInput = document.getElementById('chat-input');
 const chatSendBtn = document.getElementById('chat-send-btn');
 
+// --- Advanced Multimodal Chat Logic ---
+const fileInput = document.getElementById('chat-file-input');
+const attachBtn = document.getElementById('chat-attach-btn');
+const previewContainer = document.getElementById('chat-preview-container');
+const previewImage = document.getElementById('chat-preview-image');
+const previewFilename = document.getElementById('chat-preview-filename');
+const previewRemove = document.getElementById('chat-preview-remove');
+
 // --- UI HELPERS ---
 
 /**
@@ -386,30 +394,125 @@ async function connectWebsocket() {
 // ==========================================
 // Text Chat Logic
 // ==========================================
+
+// Local tracking state for stage management
+let pendingImages = [];
+
+if (attachBtn && fileInput) {
+    attachBtn.addEventListener('click', () => fileInput.click());
+}
+
+if (fileInput) {
+    fileInput.addEventListener('change', () => {
+        const files = Array.from(fileInput.files);
+        if (files.length === 0) return;
+
+        let processedCount = 0;
+
+        files.forEach(file => {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const dataUrl = event.target.result;
+                const base64Data = dataUrl.split(',')[1]; 
+
+                // Push item into the local tracking state arrays
+                pendingImages.push({
+                    mimeType: file.type,
+                    data: base64Data,
+                    name: file.name,
+                    src: dataUrl
+                });
+
+                processedCount++;
+
+                // Once all selected files are compiled in memory, update the preview bar
+                if (processedCount === files.length) {
+                    renderMultiPreview();
+                }
+            };
+            reader.readAsDataURL(file);
+        });
+    });
+}
+
+// Render dynamic text showing how many images are staged inside the capsule header
+function renderMultiPreview() {
+    if (pendingImages.length === 0) {
+        if (previewContainer) previewContainer.style.display = 'none';
+        return;
+    }
+
+    // Show the thumbnail image of the first file in the array as the primary display
+    if (previewImage) previewImage.src = pendingImages[0].src;
+    
+    // Display summary context (e.g., "receipt.png (+2 other files)")
+    if (previewFilename) {
+        if (pendingImages.length === 1) {
+            previewFilename.textContent = pendingImages[0].name;
+        } else {
+            previewFilename.textContent = `${pendingImages[0].name} (+${pendingImages.length - 1} files)`;
+        }
+    }
+
+    if (previewContainer) previewContainer.style.display = 'flex';
+}
+
+// Clear whole queue state if user discards the attachment badge
+if (previewRemove) {
+    previewRemove.addEventListener('click', (e) => {
+        if (e) e.stopPropagation();
+        pendingImages = [];
+        if (fileInput) fileInput.value = '';
+        if (previewContainer) previewContainer.style.display = 'none';
+        if (previewImage) previewImage.src = '';
+    });
+}
+
+/**
+ * Coordinated Multi-Image Dispatch Engine
+ */
 function sendChatMessage() {
     const text = chatInput.value.trim();
-    if (!text) return;
+    
+    if (!text && pendingImages.length === 0) return;
 
     if (websocket && websocket.readyState === WebSocket.OPEN && isConnected) {
-        // Send the JSON format your main.py expects
-        const payload = JSON.stringify({
-            type: "text",
-            text: text
-        });
         
-        websocket.send(payload);
+        // Step A: Dispatch the entire compiled image stack down the socket pipe
+        if (pendingImages.length > 0) {
+            websocket.send(JSON.stringify({
+                type: "multi-image",
+                images: pendingImages.map(img => ({
+                    mimeType: img.mimeType,
+                    data: img.data
+                }))
+            }));
+            
+            if (transcriptUser) {
+                transcriptUser.innerText = `[Sent ${pendingImages.length} Image Attachments]`;
+            }
+        }
 
-        // Update user text (Gemini doesn't echo text inputs, so we must do it here)
-        transcriptUser.innerText = `"${text}"`;        
+        // Step B: Send text context frames immediately after the images
+        if (text) {
+            websocket.send(JSON.stringify({
+                type: "text",
+                text: text
+            }));
+            if (transcriptUser) {
+                transcriptUser.innerText = `"${text}"`;
+            }
+        }
 
-        // Clear the text box
+        // Step C: Clear variables and restore clean inputs
         chatInput.value = "";
+        if (previewRemove) previewRemove.click(); 
     }
 }
 
 // Send on Button Click
 if (chatSendBtn) {
-    chatSendBtn.addEventListener('click', sendChatMessage);
+    chatSendBtn.onclick = sendChatMessage; 
 }
 
 // Send on Enter Key (Allow Shift+Enter for new lines)
