@@ -394,7 +394,6 @@ async function connectWebsocket() {
 // Text Chat Logic
 // ==========================================
 
-// Local tracking state for stage management
 // State tracking array for multi-file upload stages
 let pendingImages = [];
 
