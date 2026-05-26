@@ -78,7 +78,7 @@ def build_agent_cache(agent_name: str, gs_path: str, purpose: str, instructions:
     
     # Context Caching uses specific models (like gemini-3-flash-preview)
     cached_content = client.caches.create(
-        model=config.SUBAGENT_LITE_MODEL,
+        model=config.agent_config.SUBAGENT_LITE_MODEL,
         config=types.CreateCachedContentConfig(
             contents=[document_part],
             system_instruction=full_system_instruction,

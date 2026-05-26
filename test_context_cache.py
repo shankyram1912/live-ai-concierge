@@ -58,7 +58,7 @@ if __name__ == "__main__":
     
     # Generate content using the cached context
     response = client.models.generate_content(
-        model=config.SUBAGENT_LITE_MODEL, # Must match the model the cache was created with
+        model=config.agent_config.SUBAGENT_LITE_MODEL, # Must match the model the cache was created with
         contents=test_question,
         config=types.GenerateContentConfig(
             cached_content=active_cache_name, # This links the prompt to the pre-loaded cache!
